@@ -19,6 +19,8 @@ import PIL
 #python2 realtime_optical.py ../../models/FlowNet2-CSS-ft-sd/FlowNet2-CSS-ft-sd_weights.caffemodel.h5 ../../models/FlowNet2-CSS-ft-sd/FlowNet2-CSS-ft-sd_deploy.prototxt.template tmp.flo --gpu 0
 #python2 realtime_optical.py ../../models/FlowNet2-css-ft-sd/FlowNet2-css-ft-sd_weights.caffemodel.h5 ../../models/FlowNet2-css-ft-sd/FlowNet2-css-ft-sd_deploy.prototxt.template tmp.flo --gpu 0
 
+#yes "python2 realtime_optical.py ../../models/FlowNet2-SD/FlowNet2-SD_weights.caffemodel.h5 ../../models/FlowNet2-SD/FlowNet2-SD_deploy.prototxt.template tmp.flo --gpu 0 &" | head -n 4 | bash
+
 parser = argparse.ArgumentParser()
 parser.add_argument('caffemodel', help='path to model')
 parser.add_argument('deployproto', help='path to deploy prototxt template')
@@ -36,7 +38,7 @@ if not args.verbose:
 caffe.set_device(args.gpu)
 caffe.set_mode_gpu()
 
-check = 0
+check = False
 tmp = None
 net = None
 def opticalflow_NN(img0, img1, args):
@@ -65,7 +67,7 @@ def opticalflow_NN(img0, img1, args):
     vars['SCALE_WIDTH'] = width / float(vars['ADAPTED_WIDTH']);
     vars['SCALE_HEIGHT'] = height / float(vars['ADAPTED_HEIGHT']);
 
-    if check == 0:
+    if check == False:
         tmp = tempfile.NamedTemporaryFile(mode='w', delete=True)
         proto = open(args.deployproto).readlines()
         for line in proto:
@@ -76,7 +78,7 @@ def opticalflow_NN(img0, img1, args):
             tmp.write(line)
         tmp.flush()
         net = caffe.Net(tmp.name, args.caffemodel, caffe.TEST)
-    check+=1
+    check = True
     input_dict = {}
     for blob_idx in range(num_blobs):
         input_dict[net.inputs[blob_idx]] = input_data[blob_idx]
