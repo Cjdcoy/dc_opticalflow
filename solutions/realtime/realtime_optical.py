@@ -7,17 +7,19 @@ import caffe
 import tempfile
 from math import ceil
 import time
+import PIL
 
 #USAGE
-#python2 realtime_optical.py ../../models/FlowNet2-KITTI/FlowNet2-KITTI_weights.caffemodel.h5 ../../models/FlowNet2-KITTI/FlowNet2-KITTI_deploy.prototxt.template tmp.flo --gpu
-#python2 realtime_optical.py ../../models/FlowNet2/FlowNet2_weights.caffemodel.h5 ../../models/FlowNet2/FlowNet2_deploy.prototxt.template tmp.flo --gpu
-#python2 realtime_optical.py ../../models/FlowNet2-s/FlowNet2-s_weights.caffemodel ../../models/FlowNet2-s/FlowNet2-s_deploy.prototxt.template tmp.flo --gpu
-#python2 realtime_optical.py ../../models/FlowNet2-ss/FlowNet2-ss_weights.caffemodel ../../models/FlowNet2-ss/FlowNet2-ss_deploy.prototxt.template tmp.flo --gpu
-#python2 realtime_optical.py ../../models/FlowNet2-C/FlowNet2-C_weights.caffemodel ../../models/FlowNet2-C/FlowNet2-C_deploy.prototxt.template tmp.flo --gpu
-#python2 realtime_optical.py ../../models/FlowNet2-CSS/FlowNet2-CSS_weights.caffemodel.h5 ../../models/FlowNet2-CSS/FlowNet2-CSS_deploy.prototxt.template tmp.flo --gpu
-#python2 realtime_optical.py ../../models/FlowNet2-CS/FlowNet2-CS_weights.caffemodel ../../models/FlowNet2-CS/FlowNet2-CS_deploy.prototxt.template tmp.flo --gpu
-#python2 realtime_optical.py ../../models/FlowNet2-CSS-ft-sd/FlowNet2-CSS-ft-sd_weights.caffemodel.h5 ../../models/FlowNet2-CSS-ft-sd/FlowNet2-CSS-ft-sd_deploy.prototxt.template tmp.flo --gpu
+#python2 realtime_optical.py ../../models/FlowNet2-KITTI/FlowNet2-KITTI_weights.caffemodel.h5 ../../models/FlowNet2-KITTI/FlowNet2-KITTI_deploy.prototxt.template tmp.flo --gpu 0
+#python2 realtime_optical.py ../../models/FlowNet2/FlowNet2_weights.caffemodel.h5 ../../models/FlowNet2/FlowNet2_deploy.prototxt.template tmp.flo --gpu 0
+#python2 realtime_optical.py ../../models/FlowNet2-s/FlowNet2-s_weights.caffemodel ../../models/FlowNet2-s/FlowNet2-s_deploy.prototxt.template tmp.flo --gpu 0
+#python2 realtime_optical.py ../../models/FlowNet2-ss/FlowNet2-ss_weights.caffemodel ../../models/FlowNet2-ss/FlowNet2-ss_deploy.prototxt.template tmp.flo --gpu 0
+#python2 realtime_optical.py ../../models/FlowNet2-C/FlowNet2-C_weights.caffemodel ../../models/FlowNet2-C/FlowNet2-C_deploy.prototxt.template tmp.flo --gpu 0
+#python2 realtime_optical.py ../../models/FlowNet2-CSS/FlowNet2-CSS_weights.caffemodel.h5 ../../models/FlowNet2-CSS/FlowNet2-CSS_deploy.prototxt.template tmp.flo --gpu 0
+#python2 realtime_optical.py ../../mod;;els/FlowNet2-CS/FlowNet2-CS_weights.caffemodel ../../models/FlowNet2-CS/FlowNet2-CS_deploy.prototxt.template tmp.flo --gpu 0
 
+#python2 realtime_optical.py ../../models/FlowNet2-CSS-ft-sd/FlowNet2-CSS-ft-sd_weights.caffemodel.h5 ../../models/FlowNet2-CSS-ft-sd/FlowNet2-CSS-ft-sd_deploy.prototxt.template tmp.flo --gpu 0
+#python2 realtime_optical.py ../../models/FlowNet2-css-ft-sd/FlowNet2-css-ft-sd_weights.caffemodel.h5 ../../models/FlowNet2-css-ft-sd/FlowNet2-css-ft-sd_deploy.prototxt.template tmp.flo --gpu 0
 
 parser = argparse.ArgumentParser()
 parser.add_argument('caffemodel', help='path to model')
@@ -86,7 +88,7 @@ def opticalflow_NN(img0, img1, args):
 # it seems to be a race-condition
 #
     i = 1
-    while i<=3:
+    while i<=5:
         i+=1
 
         net.forward(**input_dict)
@@ -258,7 +260,8 @@ def computeImg(flow):
 def flow_to_png(file):
     flow = readFlow('tmp.flo')
     img = computeImg(flow)
-    cv2.imshow('color_img', img)
+    #for i in range(img.shape[0]):
+    #    cv2.imwrite("plane" + str(i) + ".png", img[i])
     return img
 
 def writeFlow(name, flow):
@@ -269,30 +272,37 @@ def writeFlow(name, flow):
     flow.tofile(f)
     f.flush()
     f.close()
-    flow_to_png(f)
+    return flow_to_png(f)
 
 start_time = time.time()
 def show_webcam(args, mirror=False):
-    global montemps
-    global atime
+    global start_time
     cam = cv2.VideoCapture(0)
     width = cam.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH) / 2
     height = cam.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT) / 2
+    print(width, height)
     fourcc = cv2.cv.CV_FOURCC(*'XVID')
     ret_val, prev_img = cam.read()
     prev_img = cv2.resize(prev_img, (int(width), int(height)))
     i = 0
+    x = 1
+    fps = 0
     while True:
-        #print("tour: ", i, "time elapsed (seconds)", time.time() - start_time)
-        i+=1
+        i += 1
         ret_val, actual_img = cam.read()
-        actual_img = cv2.resize(actual_img, (int(width), int(height)))
         if ret_val == True:
-            flow_img = opticalflow_NN(cv2.cvtColor(prev_img, cv2.COLOR_BGR2GRAY), cv2.cvtColor(actual_img, cv2.COLOR_BGR2GRAY), args)
-            if mirror:
-                actual_img = cv2.flip(actual_img, 1)
+            actual_img = cv2.resize(actual_img, (int(width), int(height)))
+            if (time.time() - start_time) > x:
+                fps = i / (time.time() - start_time)
+                start_time = time.time()
+                i = 0
 
-            cv2.imshow('my webcam2', actual_img)
+            flow_img = opticalflow_NN(cv2.cvtColor(prev_img, cv2.COLOR_BGR2GRAY), cv2.cvtColor(actual_img, cv2.COLOR_BGR2GRAY), args)
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            #cv2.putText(flow_img, "fps: "+ "{:1.3f}".format(fps), (20, 20), font, 0.5, (10, 10, 10), 2,
+            #            cv2.CV_AA)
+            cv2.imshow('CSS-ft-sd', flow_img)
+            cv2.imshow('my webcam', actual_img)
             if cv2.waitKey(1) == 27:
                 break  # esc to quit
             prev_img = actual_img
