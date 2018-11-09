@@ -262,9 +262,9 @@ def writeFlow(name, flow):
 start_time = time.time()
 def show_webcam(args, mirror=False):
     global start_time
-    cam = cv2.VideoCapture('/home/cjdcoy/Downloads/Office/v10.avi') #/home/cjdcoy/Downloads/Office/v10.avi
-    width = cam.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH) * 0.7
-    height = cam.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT) * 0.7
+    cam = cv2.VideoCapture(0) #/home/cjdcoy/Downloads/Office/v10.avi
+    width = cam.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH) / 2
+    height = cam.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT) / 2
     print(width, height)
     fourcc = cv2.cv.CV_FOURCC(*'XVID')
     ret_val, prev_img = cam.read()
