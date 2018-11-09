@@ -11,12 +11,10 @@ import PIL
 
 #USAGE
 #python2 realtime_optical.py ../../models/FlowNet2-KITTI/FlowNet2-KITTI_weights.caffemodel.h5 ../../models/FlowNet2-KITTI/FlowNet2-KITTI_deploy.prototxt.template tmp.flo --gpu 0
+#python2 realtime_optical.py ../../models/FlowNet2-Sintel/FlowNet2-CSS-Sintel_weights.caffemodel.h5 ../../models/FlowNet2-Sintel/FlowNet2-CSS-Sintel_deploy.prototxt.template tmp.flo --gpu 0
+#python2 realtime_optical.py ../../models/FlowNet2-SD/FlowNet2-SD_weights.caffemodel.h5 ../../models/FlowNet2-SD/FlowNet2-SD_deploy.prototxt.template tmp.flo --gpu 0
+
 #python2 realtime_optical.py ../../models/FlowNet2/FlowNet2_weights.caffemodel.h5 ../../models/FlowNet2/FlowNet2_deploy.prototxt.template tmp.flo --gpu 0
-#python2 realtime_optical.py ../../models/FlowNet2-s/FlowNet2-s_weights.caffemodel ../../models/FlowNet2-s/FlowNet2-s_deploy.prototxt.template tmp.flo --gpu 0
-#python2 realtime_optical.py ../../models/FlowNet2-ss/FlowNet2-ss_weights.caffemodel ../../models/FlowNet2-ss/FlowNet2-ss_deploy.prototxt.template tmp.flo --gpu 0
-#python2 realtime_optical.py ../../models/FlowNet2-C/FlowNet2-C_weights.caffemodel ../../models/FlowNet2-C/FlowNet2-C_deploy.prototxt.template tmp.flo --gpu 0
-#python2 realtime_optical.py ../../models/FlowNet2-CSS/FlowNet2-CSS_weights.caffemodel.h5 ../../models/FlowNet2-CSS/FlowNet2-CSS_deploy.prototxt.template tmp.flo --gpu 0
-#python2 realtime_optical.py ../../mod;;els/FlowNet2-CS/FlowNet2-CS_weights.caffemodel ../../models/FlowNet2-CS/FlowNet2-CS_deploy.prototxt.template tmp.flo --gpu 0
 
 #python2 realtime_optical.py ../../models/FlowNet2-CSS-ft-sd/FlowNet2-CSS-ft-sd_weights.caffemodel.h5 ../../models/FlowNet2-CSS-ft-sd/FlowNet2-CSS-ft-sd_deploy.prototxt.template tmp.flo --gpu 0
 #python2 realtime_optical.py ../../models/FlowNet2-css-ft-sd/FlowNet2-css-ft-sd_weights.caffemodel.h5 ../../models/FlowNet2-css-ft-sd/FlowNet2-css-ft-sd_deploy.prototxt.template tmp.flo --gpu 0
@@ -144,7 +142,7 @@ def read_flow(file):
     # Reshape data into 3D array (columns, rows, bands)
     flow = np.resize(data, (int(h), int(w), 2))
     f.close()
-
+    print(flow)
     return flow
 
 def makeColorwheel():
@@ -257,29 +255,16 @@ def computeImg(flow):
     img = computeColor(u, v)
     return img
 
-def flow_to_png(file):
-    flow = readFlow('tmp.flo')
-    img = computeImg(flow)
-    #for i in range(img.shape[0]):
-    #    cv2.imwrite("plane" + str(i) + ".png", img[i])
-    return img
 
 def writeFlow(name, flow):
-    f = open(name, 'wb')
-    f.write('PIEH'.encode('utf-8'))
-    np.array([flow.shape[1], flow.shape[0]], dtype=np.int32).tofile(f)
-    flow = flow.astype(np.float32)
-    flow.tofile(f)
-    f.flush()
-    f.close()
-    return flow_to_png(f)
+    return computeImg(flow.astype(np.float32))
 
 start_time = time.time()
 def show_webcam(args, mirror=False):
     global start_time
-    cam = cv2.VideoCapture(0)
-    width = cam.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH) / 2
-    height = cam.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT) / 2
+    cam = cv2.VideoCapture('/home/cjdcoy/Downloads/Office/v10.avi') #/home/cjdcoy/Downloads/Office/v10.avi
+    width = cam.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH) * 0.7
+    height = cam.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT) * 0.7
     print(width, height)
     fourcc = cv2.cv.CV_FOURCC(*'XVID')
     ret_val, prev_img = cam.read()
@@ -299,10 +284,10 @@ def show_webcam(args, mirror=False):
 
             flow_img = opticalflow_NN(cv2.cvtColor(prev_img, cv2.COLOR_BGR2GRAY), cv2.cvtColor(actual_img, cv2.COLOR_BGR2GRAY), args)
             font = cv2.FONT_HERSHEY_SIMPLEX
-            #cv2.putText(flow_img, "fps: "+ "{:1.3f}".format(fps), (20, 20), font, 0.5, (10, 10, 10), 2,
-            #            cv2.CV_AA)
+            cv2.putText(flow_img, "fps: "+ "{:1.3f}".format(fps), (20, 20), font, 0.5, (10, 10, 10), 2,
+                       cv2.CV_AA)
             cv2.imshow('CSS-ft-sd', flow_img)
-            cv2.imshow('my webcam', actual_img)
+            #cv2.imshow('my webcam', actual_img)
             if cv2.waitKey(1) == 27:
                 break  # esc to quit
             prev_img = actual_img
