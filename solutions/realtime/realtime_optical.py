@@ -10,34 +10,31 @@ import time
 import PIL
 
 #USAGE
-#python2 realtime_optical.py ../../models/FlowNet2-KITTI/FlowNet2-KITTI_weights.caffemodel.h5 ../../models/FlowNet2-KITTI/FlowNet2-KITTI_deploy.prototxt.template tmp.flo --gpu 0
-#python2 realtime_optical.py ../../models/FlowNet2-Sintel/FlowNet2-CSS-Sintel_weights.caffemodel.h5 ../../models/FlowNet2-Sintel/FlowNet2-CSS-Sintel_deploy.prototxt.template tmp.flo --gpu 0
-#python2 realtime_optical.py ../../models/FlowNet2-SD/FlowNet2-SD_weights.caffemodel.h5 ../../models/FlowNet2-SD/FlowNet2-SD_deploy.prototxt.template tmp.flo --gpu 0
+#python2 realtime_optical.py ../../models/FlowNet2-KITTI/FlowNet2-KITTI_weights.caffemodel.h5 ../../models/FlowNet2-KITTI/FlowNet2-KITTI_deploy.prototxt.template
+#python2 realtime_optical.py ../../models/FlowNet2-Sintel/FlowNet2-CSS-Sintel_weights.caffemodel.h5 ../../models/FlowNet2-Sintel/FlowNet2-CSS-Sintel_deploy.prototxt.template
+#python2 realtime_optical.py ../../models/FlowNet2-SD/FlowNet2-SD_weights.caffemodel.h5 ../../models/FlowNet2-SD/FlowNet2-SD_deploy.prototxt.template
 
-#python2 realtime_optical.py ../../models/FlowNet2/FlowNet2_weights.caffemodel.h5 ../../models/FlowNet2/FlowNet2_deploy.prototxt.template tmp.flo --gpu 0
+#python2 realtime_optical.py ../../models/FlowNet2/FlowNet2_weights.caffemodel.h5 ../../models/FlowNet2/FlowNet2_deploy.prototxt.template
 
-#python2 realtime_optical.py ../../models/FlowNet2-CSS-ft-sd/FlowNet2-CSS-ft-sd_weights.caffemodel.h5 ../../models/FlowNet2-CSS-ft-sd/FlowNet2-CSS-ft-sd_deploy.prototxt.template tmp.flo --gpu 0
-#python2 realtime_optical.py ../../models/FlowNet2-css-ft-sd/FlowNet2-css-ft-sd_weights.caffemodel.h5 ../../models/FlowNet2-css-ft-sd/FlowNet2-css-ft-sd_deploy.prototxt.template tmp.flo --gpu 0
+#python2 realtime_optical.py ../../models/FlowNet2-CSS-ft-sd/FlowNet2-CSS-ft-sd_weights.caffemodel.h5 ../../models/FlowNet2-CSS-ft-sd/FlowNet2-CSS-ft-sd_deploy.prototxt.template
+#python2 realtime_optical.py ../../models/FlowNet2-css-ft-sd/FlowNet2-css-ft-sd_weights.caffemodel.h5 ../../models/FlowNet2-css-ft-sd/FlowNet2-css-ft-sd_deploy.prototxt.template
 
-#yes "python2 realtime_optical.py ../../models/FlowNet2-SD/FlowNet2-SD_weights.caffemodel.h5 ../../models/FlowNet2-SD/FlowNet2-SD_deploy.prototxt.template tmp.flo --gpu 0 &" | head -n 4 | bash
+#yes "python2 realtime_optical.py ../../models/FlowNet2-SD/FlowNet2-SD_weights.caffemodel.h5 ../../models/FlowNet2-SD/FlowNet2-SD_deploy.prototxt.template &" | head -n 4 | bash
 
 parser = argparse.ArgumentParser()
+
 parser.add_argument('caffemodel', help='path to model')
 parser.add_argument('deployproto', help='path to deploy prototxt template')
-parser.add_argument('tmp', help='tmp file', default='tmp.flo')
-parser.add_argument('--gpu', help='number of gpu', default=0, type=int)
 #parser.add_argument('width', help='set width, default 320', default=320, type=int)
 #parser.add_argument('height', help='set hight, default 240', default=240, type=int)
 parser.add_argument('--verbose', help='whether to output all caffe logging',
                         action='store_true')
-
 args = parser.parse_args()
 
 if not args.verbose:
     caffe.set_logging_disabled()
-caffe.set_device(args.gpu)
+caffe.set_device(0)
 caffe.set_mode_gpu()
-
 check = False
 tmp = None
 net = None
@@ -45,6 +42,7 @@ def opticalflow_NN(img0, img1, args):
     global check
     global caffe
     global tmp
+
     global net
     num_blobs = 2
     input_data = []
@@ -108,8 +106,9 @@ def opticalflow_NN(img0, img1, args):
         else:
             print('**************** FOUND NANs, RETRYING ****************')
 
+
     blob = np.squeeze(net.blobs['predict_flow_final'].data).transpose(1, 2, 0)
-    return writeFlow(args.tmp, blob)
+    return writeFlow(blob)
 
 def readFlow(name):
     if name.endswith('.pfm') or name.endswith('.PFM'):
@@ -258,7 +257,7 @@ def computeImg(flow):
     return img
 
 
-def writeFlow(name, flow):
+def writeFlow(flow):
     return computeImg(flow.astype(np.float32))
 
 start_time = time.time()
@@ -284,12 +283,12 @@ def show_webcam(args, mirror=False):
                 start_time = time.time()
                 i = 0
 
-            flow_img = opticalflow_NN(cv2.cvtColor(prev_img, cv2.COLOR_BGR2GRAY), cv2.cvtColor(actual_img, cv2.COLOR_BGR2GRAY), args)
+            flow_img = opticalflow_NN(prev_img, actual_img, args)
             font = cv2.FONT_HERSHEY_SIMPLEX
-            cv2.putText(flow_img, "fps: "+ "{:1.3f}".format(fps), (20, 20), font, 0.5, (10, 10, 10), 2,
+            cv2.putText(flow_img, "fps: "+ "{:1.2f}".format(fps), (10, 20), font, 0.5, (10, 10, 10), 2,
                        cv2.CV_AA)
-            cv2.imshow('CSS-ft-sd', flow_img)
-            #cv2.imshow('my webcam', actual_img)
+            cv2.imshow('opticalflow', flow_img)
+            cv2.imshow('webcam', actual_img)
             if cv2.waitKey(1) == 27:
                 break  # esc to quit
             prev_img = actual_img
@@ -303,8 +302,6 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('caffemodel', help='path to model')
     parser.add_argument('deployproto', help='path to deploy prototxt template')
-    parser.add_argument('tmp', help='tmp file', default='tmp.flo')
-    parser.add_argument('--gpu', help='number of gpu', default=0, type=int)
     #parser.add_argument('width', default=320, type=int)
     #parser.add_argument('height', default=240, type=int)
     parser.add_argument('--verbose', help='whether to output all caffe logging',
