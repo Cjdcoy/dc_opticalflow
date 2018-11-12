@@ -2,7 +2,7 @@ opticalflow_utilities
 ======================
 
 
-dc_opticalflow is a library of optical flow utilies based on 
+opticalflow_utilities is a library of optical flow utilies based on 
 <a href="https://github.com/lmb-freiburg/flownet2" target="_blank">flownet2</a><br>
 
 ## Progress
