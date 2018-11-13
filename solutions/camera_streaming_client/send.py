@@ -25,7 +25,7 @@ class VideoCamera(object):
         return jpeg.tobytes()
 
 
-ADDRESS = ("localhost", 10000)
+ADDRESS = ("", 10000)
 
 
 class Streaming(Thread):
@@ -54,6 +54,7 @@ class Streaming(Thread):
 
         except Exception as e:
             print(e)
+            s.close()
         finally:
             # exit
             print("Closing socket and exit")
