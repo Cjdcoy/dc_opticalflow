@@ -25,7 +25,7 @@ class VideoCamera(object):
         return jpeg.tobytes()
 
 
-ADDRESS = ("", 10000)
+ADDRESS = ("localhost", 10000)
 
 
 class Streaming(Thread):
@@ -35,22 +35,24 @@ class Streaming(Thread):
         self.cap = VideoCamera()
 
     def run(self):
+        # s = socket.socket()
+        # s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        # s.bind(ADDRESS)
+        # s.listen(1)
         s = socket.socket()
-        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.bind(ADDRESS)
-        s.listen(1)
+        s.connect(ADDRESS)
 
         print("Wait for connection")
         try:
-            sc, info = s.accept()
+#            sc, info = s.accept()
             print("Video client connected:, info")
 
             while True:
                 # get image surface
                 image = self.cap.get_frame()
                 #print(' Buffer size is %s', sc.buffer_size)
-                sc.send(struct.pack('!i', len(image)))
-                sc.send(image)
+                s.send(struct.pack('!i', len(image)))
+                s.send(image)
 
         except Exception as e:
             print(e)
@@ -61,7 +63,6 @@ class Streaming(Thread):
             s.close()
 
 
-# --- main ---
-
-Streaming().run()
+if __name__ == "__main__":
+    Streaming().run()
 
