@@ -19,7 +19,6 @@ End with an example of getting some data out of the system or using it for a lit
 ## Features
 
 - [x] .png to .flo
-- [x] multiple .png to multiple .flo
 - [x] .flo to .png in the same program (input IMG IMG)
 - [x] video to video of opticalFlow
 - [x] opticalflow in streaming
