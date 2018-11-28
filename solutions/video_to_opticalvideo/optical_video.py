@@ -9,14 +9,14 @@ from math import ceil
 import time
 
 #USAGE
-#python2 video_to_optical_video.py ../../models/FlowNet2-KITTI/FlowNet2-KITTI_weights.caffemodel.h5 ../../models/FlowNet2-KITTI/FlowNet2-KITTI_deploy.prototxt.template ~/Downloads/Office/video\ \(1\).avi  KITTI.avi tmp.flo
-#python2 video_to_optical_video.py ../../models/FlowNet2/FlowNet2_weights.caffemodel.h5 ../../models/FlowNet2/FlowNet2_deploy.prototxt.template ~/Downloads/Office/video\ \(1\).avi  FlowNet2.avi tmp.flo
-#python2 video_to_optical_video.py ../../models/FlowNet2-s/FlowNet2-s_weights.caffemodel ../../models/FlowNet2-s/FlowNet2-s_deploy.prototxt.template ~/Downloads/Office/video\ \(1\).avi  FlowNet2.avi tmp.flo
-#python2 video_to_optical_video.py ../../models/FlowNet2-ss/FlowNet2-ss_weights.caffemodel ../../models/FlowNet2-ss/FlowNet2-ss_deploy.prototxt.template ~/Downloads/Office/video\ \(1\).avi  FlowNet2.avi tmp.flo
-#python2 video_to_optical_video.py ../../models/FlowNet2-C/FlowNet2-C_weights.caffemodel ../../models/FlowNet2-C/FlowNet2-C_deploy.prototxt.template ~/Downloads/Office/video\ \(1\).avi  FlowNet2.avi tmp.flo
-#python2 video_to_optical_video.py ../../models/FlowNet2-CSS/FlowNet2-CSS_weights.caffemodel.h5 ../../models/FlowNet2-CSS/FlowNet2-CSS_deploy.prototxt.template ~/Downloads/Office/video\ \(1\).avi  FlowNet2.avi tmp.flo
-#python2 video_to_optical_video.py ../../models/FlowNet2-CS/FlowNet2-CS_weights.caffemodel ../../models/FlowNet2-CS/FlowNet2-CS_deploy.prototxt.template ~/Downloads/Office/video\ \(1\).avi  FlowNet2.avi tmp.flo
-#python2 video_to_optical_video.py ../../models/FlowNet2-CSS-ft-sd/FlowNet2-CSS-ft-sd_weights.caffemodel.h5 ../../models/FlowNet2-CSS-ft-sd/FlowNet2-CSS-ft-sd_deploy.prototxt.template ~/Downloads/Office/video\ \(1\).avi  FlowNet2.avi tmp.flo
+#python2 optical_video.py ../../models/FlowNet2-KITTI/FlowNet2-KITTI_weights.caffemodel.h5 ../../models/FlowNet2-KITTI/FlowNet2-KITTI_deploy.prototxt.template ~/Downloads/Office/video\ \(1\).avi  KITTI.avi tmp.flo
+#python2 optical_video.py ../../models/FlowNet2/FlowNet2_weights.caffemodel.h5 ../../models/FlowNet2/FlowNet2_deploy.prototxt.template ~/Downloads/Office/video\ \(1\).avi  FlowNet2.avi tmp.flo
+#python2 optical_video.py ../../models/FlowNet2-s/FlowNet2-s_weights.caffemodel ../../models/FlowNet2-s/FlowNet2-s_deploy.prototxt.template ~/Downloads/Office/video\ \(1\).avi  FlowNet2.avi tmp.flo
+#python2 optical_video.py ../../models/FlowNet2-ss/FlowNet2-ss_weights.caffemodel ../../models/FlowNet2-ss/FlowNet2-ss_deploy.prototxt.template ~/Downloads/Office/video\ \(1\).avi  FlowNet2.avi tmp.flo
+#python2 optical_video.py ../../models/FlowNet2-C/FlowNet2-C_weights.caffemodel ../../models/FlowNet2-C/FlowNet2-C_deploy.prototxt.template ~/Downloads/Office/video\ \(1\).avi  FlowNet2.avi tmp.flo
+#python2 optical_video.py ../../models/FlowNet2-CSS/FlowNet2-CSS_weights.caffemodel.h5 ../../models/FlowNet2-CSS/FlowNet2-CSS_deploy.prototxt.template ~/Downloads/Office/video\ \(1\).avi  FlowNet2.avi tmp.flo
+#python2 optical_video.py ../../models/FlowNet2-CS/FlowNet2-CS_weights.caffemodel ../../models/FlowNet2-CS/FlowNet2-CS_deploy.prototxt.template ~/Downloads/Office/video\ \(1\).avi  FlowNet2.avi tmp.flo
+#python2 optical_video.py ../../models/FlowNet2-CSS-ft-sd/FlowNet2-CSS-ft-sd_weights.caffemodel.h5 ../../models/FlowNet2-CSS-ft-sd/FlowNet2-CSS-ft-sd_deploy.prototxt.template ~/Downloads/Office/video\ \(1\).avi  FlowNet2.avi tmp.flo
 
 
 parser = argparse.ArgumentParser()
@@ -24,9 +24,6 @@ parser.add_argument('caffemodel', help='path to model')
 parser.add_argument('deployproto', help='path to deploy prototxt template')
 parser.add_argument('video', help='video path')
 parser.add_argument('out', help='output filename', default='out.avi')
-parser.add_argument('tmp', help='tmp file', default='tmp.flo')
-parser.add_argument('--gpu', help='gpu id to use (0, 1, ...)', default=0,
-                        type=int)
 parser.add_argument('--verbose', help='whether to output all caffe logging',
                         action='store_true')
 
@@ -34,7 +31,7 @@ args = parser.parse_args()
 
 if not args.verbose:
     caffe.set_logging_disabled()
-caffe.set_device(args.gpu)
+caffe.set_device(0)
 caffe.set_mode_gpu()
 
 check = 0
@@ -44,6 +41,7 @@ def opticalflow_NN(img0, img1, args):
     global check
     global caffe
     global tmp
+
     global net
     num_blobs = 2
     input_data = []
@@ -66,7 +64,7 @@ def opticalflow_NN(img0, img1, args):
     vars['SCALE_WIDTH'] = width / float(vars['ADAPTED_WIDTH']);
     vars['SCALE_HEIGHT'] = height / float(vars['ADAPTED_HEIGHT']);
 
-    if check == 0:
+    if check == False:
         tmp = tempfile.NamedTemporaryFile(mode='w', delete=True)
         proto = open(args.deployproto).readlines()
         for line in proto:
@@ -77,7 +75,7 @@ def opticalflow_NN(img0, img1, args):
             tmp.write(line)
         tmp.flush()
         net = caffe.Net(tmp.name, args.caffemodel, caffe.TEST)
-    check+=1
+    check = True
     input_dict = {}
     for blob_idx in range(num_blobs):
         input_dict[net.inputs[blob_idx]] = input_data[blob_idx]
@@ -87,7 +85,7 @@ def opticalflow_NN(img0, img1, args):
 # it seems to be a race-condition
 #
     i = 1
-    while i<=3:
+    while i<=5:
         i+=1
 
         net.forward(**input_dict)
@@ -106,9 +104,8 @@ def opticalflow_NN(img0, img1, args):
             break
         else:
             print('**************** FOUND NANs, RETRYING ****************')
-
     blob = np.squeeze(net.blobs['predict_flow_final'].data).transpose(1, 2, 0)
-    return writeFlow(args.tmp, blob)
+    return writeFlow(blob)
 
 def readFlow(name):
     if name.endswith('.pfm') or name.endswith('.PFM'):
@@ -143,7 +140,7 @@ def read_flow(file):
     # Reshape data into 3D array (columns, rows, bands)
     flow = np.resize(data, (int(h), int(w), 2))
     f.close()
-
+    print(flow)
     return flow
 
 def makeColorwheel():
@@ -256,30 +253,22 @@ def computeImg(flow):
     img = computeColor(u, v)
     return img
 
-def flow_to_png(file):
-    flow = readFlow('tmp.flo')
-    img = computeImg(flow)
-    cv2.imshow('color_img', img)
-    return img
 
-def writeFlow(name, flow):
-    f = open(name, 'wb')
-    f.write('PIEH'.encode('utf-8'))
-    np.array([flow.shape[1], flow.shape[0]], dtype=np.int32).tofile(f)
-    flow = flow.astype(np.float32)
-    flow.tofile(f)
-    f.flush()
-    f.close()
-    flow_to_png(f)
+def writeFlow(flow):
+    return computeImg(flow.astype(np.float32))
+
 
 start_time = time.time()
-def show_webcam(args, mirror=False):
+
+
+def show_webcam(args):
     global montemps
     global atime
+    print(args.video, '\n_________________')
     cam = cv2.VideoCapture(args.video)
-    width = cam.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH)
-    height = cam.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT)
-    fourcc = cv2.cv.CV_FOURCC(*'XVID')
+    width = cam.get(cv2.CAP_PROP_FRAME_WIDTH)
+    height = cam.get(cv2.CAP_PROP_FRAME_HEIGHT)
+    fourcc = cv2.VideoWriter_fourcc(*'XVID')
     out = cv2.VideoWriter(args.out, fourcc, 20.0, (int(width), int(height)))
     ret_val, prev_img = cam.read()
     prev_img = cv2.resize(prev_img, (int(width), int(height)))
@@ -290,12 +279,10 @@ def show_webcam(args, mirror=False):
         ret_val, actual_img = cam.read()
         actual_img = cv2.resize(actual_img, (int(width), int(height)))
         if ret_val == True:
-            flow_img = opticalflow_NN(cv2.cvtColor(prev_img, cv2.COLOR_BGR2GRAY), cv2.cvtColor(actual_img, cv2.COLOR_BGR2GRAY), args)
+            flow_img = opticalflow_NN(prev_img, actual_img, args)
             out.write(flow_img)
-            if mirror:
-                actual_img = cv2.flip(actual_img, 1)
 
-            cv2.imshow('my webcam2', actual_img)
+            cv2.imshow('my webcam2', prev_img)
             if cv2.waitKey(1) == 27:
                 break  # esc to quit
             prev_img = actual_img
@@ -312,12 +299,9 @@ def main():
     parser.add_argument('deployproto', help='path to deploy prototxt template')
     parser.add_argument('video', help='video path')
     parser.add_argument('out', help='output filename', default='out.avi')
-    parser.add_argument('tmp', help='tmp file', default='tmp.flo')
-    parser.add_argument('--verbose', help='whether to output all caffe logging',
-                        action='store_true')
 
     args = parser.parse_args()
-    show_webcam(args, mirror=True)
+    show_webcam(args)
 
 
 if __name__ == '__main__':

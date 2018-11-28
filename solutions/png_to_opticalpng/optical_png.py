@@ -15,15 +15,10 @@ parser.add_argument('deployproto', help='path to deploy prototxt template')
 parser.add_argument('img0', help='image 0 path')
 parser.add_argument('img1', help='image 1 path')
 parser.add_argument('out',  help='output filename')
-parser.add_argument('--gpu',  help='gpu id to use (0, 1, ...)', default=0, type=int)
 parser.add_argument('--verbose',  help='whether to output all caffe logging', action='store_true')
 
 args = parser.parse_args()
 
-if(not os.path.exists(args.caffemodel)): raise BaseException('caffemodel does not exist: '+args.caffemodel)
-if(not os.path.exists(args.deployproto)): raise BaseException('deploy-proto does not exist: '+args.deployproto)
-if(not os.path.exists(args.img0)): raise BaseException('img0 does not exist: '+args.img0)
-if(not os.path.exists(args.img1)): raise BaseException('img1 does not exist: '+args.img1)
 
 num_blobs = 2
 input_data = []
@@ -61,7 +56,7 @@ tmp.flush()
 
 if not args.verbose:
     caffe.set_logging_disabled()
-caffe.set_device(args.gpu)
+caffe.set_device(0)
 caffe.set_mode_gpu()
 net = caffe.Net(tmp.name, args.caffemodel, caffe.TEST)
 

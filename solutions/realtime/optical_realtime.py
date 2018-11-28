@@ -10,16 +10,16 @@ import time
 import PIL
 
 #USAGE
-#python2 realtime_optical.py ../../models/FlowNet2-KITTI/FlowNet2-KITTI_weights.caffemodel.h5 ../../models/FlowNet2-KITTI/FlowNet2-KITTI_deploy.prototxt.template
-#python2 realtime_optical.py ../../models/FlowNet2-Sintel/FlowNet2-CSS-Sintel_weights.caffemodel.h5 ../../models/FlowNet2-Sintel/FlowNet2-CSS-Sintel_deploy.prototxt.template
-#python2 realtime_optical.py ../../models/FlowNet2-SD/FlowNet2-SD_weights.caffemodel.h5 ../../models/FlowNet2-SD/FlowNet2-SD_deploy.prototxt.template
+#python2 optical_realtime.py ../../models/FlowNet2-KITTI/FlowNet2-KITTI_weights.caffemodel.h5 ../../models/FlowNet2-KITTI/FlowNet2-KITTI_deploy.prototxt.template
+#python2 optical_realtime.py ../../models/FlowNet2-Sintel/FlowNet2-CSS-Sintel_weights.caffemodel.h5 ../../models/FlowNet2-Sintel/FlowNet2-CSS-Sintel_deploy.prototxt.template
+#python2 optical_realtime.py ../../models/FlowNet2-SD/FlowNet2-SD_weights.caffemodel.h5 ../../models/FlowNet2-SD/FlowNet2-SD_deploy.prototxt.template
 
-#python2 realtime_optical.py ../../models/FlowNet2/FlowNet2_weights.caffemodel.h5 ../../models/FlowNet2/FlowNet2_deploy.prototxt.template
+#python2 optical_realtime.py ../../models/FlowNet2/FlowNet2_weights.caffemodel.h5 ../../models/FlowNet2/FlowNet2_deploy.prototxt.template
 
-#python2 realtime_optical.py ../../models/FlowNet2-CSS-ft-sd/FlowNet2-CSS-ft-sd_weights.caffemodel.h5 ../../models/FlowNet2-CSS-ft-sd/FlowNet2-CSS-ft-sd_deploy.prototxt.template
-#python2 realtime_optical.py ../../models/FlowNet2-css-ft-sd/FlowNet2-css-ft-sd_weights.caffemodel.h5 ../../models/FlowNet2-css-ft-sd/FlowNet2-css-ft-sd_deploy.prototxt.template
+#python2 optical_realtime.py ../../models/FlowNet2-CSS-ft-sd/FlowNet2-CSS-ft-sd_weights.caffemodel.h5 ../../models/FlowNet2-CSS-ft-sd/FlowNet2-CSS-ft-sd_deploy.prototxt.template
+#python2 optical_realtime.py ../../models/FlowNet2-css-ft-sd/FlowNet2-css-ft-sd_weights.caffemodel.h5 ../../models/FlowNet2-css-ft-sd/FlowNet2-css-ft-sd_deploy.prototxt.template
 
-#yes "python2 realtime_optical.py ../../models/FlowNet2-SD/FlowNet2-SD_weights.caffemodel.h5 ../../models/FlowNet2-SD/FlowNet2-SD_deploy.prototxt.template &" | head -n 4 | bash
+#yes "python2 optical_realtime.py ../../models/FlowNet2-SD/FlowNet2-SD_weights.caffemodel.h5 ../../models/FlowNet2-SD/FlowNet2-SD_deploy.prototxt.template &" | head -n 4 | bash
 
 parser = argparse.ArgumentParser()
 
@@ -264,10 +264,9 @@ start_time = time.time()
 def show_webcam(args, mirror=False):
     global start_time
     cam = cv2.VideoCapture(0) #/home/cjdcoy/Downloads/Office/v10.avi
-    width = cam.get(cv2.cv.CV_CAP_PROP_FRAME_WIDTH) / 2
-    height = cam.get(cv2.cv.CV_CAP_PROP_FRAME_HEIGHT) / 2
+    width = cam.get(cv2.CAP_PROP_FRAME_WIDTH) /2
+    height = cam.get(cv2.CAP_PROP_FRAME_HEIGHT) /2
     print(width, height)
-    fourcc = cv2.cv.CV_FOURCC(*'XVID')
     ret_val, prev_img = cam.read()
     prev_img = cv2.resize(prev_img, (int(width), int(height)))
     i = 0
@@ -286,7 +285,7 @@ def show_webcam(args, mirror=False):
             flow_img = opticalflow_NN(prev_img, actual_img, args)
             font = cv2.FONT_HERSHEY_SIMPLEX
             cv2.putText(flow_img, "fps: "+ "{:1.2f}".format(fps), (10, 20), font, 0.5, (10, 10, 10), 2,
-                       cv2.CV_AA)
+                        cv2.LINE_AA)
             cv2.imshow('opticalflow', flow_img)
             cv2.imshow('webcam', actual_img)
             if cv2.waitKey(1) == 27:
