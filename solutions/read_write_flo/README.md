@@ -1,4 +1,4 @@
-# flow-code-python
+# read_write_flo
 
 Compute color coding for given .flo file according to the matlab code of Deqing Sun and c++ source code of Daniel Scharstein  
 Contact: dqsun@cs.brown.edu
