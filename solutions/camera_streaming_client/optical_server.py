@@ -257,8 +257,9 @@ class Receiving(Thread):
             if first_loop:
                 first_loop = False
                 img_past = img
-            nb_loop = self.fps_counter(nb_loop)
-            nb_loop += 1
+            if args.fps == 1:
+                nb_loop = self.fps_counter(nb_loop)
+                nb_loop += 1
             flow = opticalflow_NN(img_past, img, args)
             self.send_image(sc, flow)
             img_past = img
@@ -292,6 +293,8 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--port", type=int, default=10000)
     parser.add_argument("-c", "--caffemodel", help='path to model', type=str, default="../../flownet2/models/FlowNet2-SD/FlowNet2-SD_weights.caffemodel.h5")
     parser.add_argument("-d", "--deployproto",  help='path to deploy prototxt template', type=str, default="../../flownet2/models/FlowNet2-SD/FlowNet2-SD_deploy.prototxt.template")
+    parser.add_argument("-f", "--fps",  help='1 to print fps', type=int, default=0, choices=[0, 1])
+
     args = parser.parse_args()
 
     Receiving().run(args)
