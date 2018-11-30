@@ -1,5 +1,4 @@
 from __future__ import print_function
-import cv2
 import os, sys
 from scipy import misc
 import caffe
@@ -11,10 +10,9 @@ import struct
 import cv2
 import numpy as np
 import time
+import argparse
 import cPickle as pickle
 
-
-#yes "python2 realtime_optical.py ../../models/FlowNet2-SD/FlowNet2-SD_weights.caffemodel.h5 ../../models/FlowNet2-SD/FlowNet2-SD_deploy.prototxt.template &" | head -n 4 | bash
 
 caffe.set_logging_disabled()
 caffe.set_device(0)
@@ -22,7 +20,7 @@ caffe.set_mode_gpu()
 check = False
 tmp = None
 net = None
-def opticalflow_NN(img0, img1):
+def opticalflow_NN(img0, img1, args):
     global check
     global caffe
     global tmp
@@ -51,7 +49,7 @@ def opticalflow_NN(img0, img1):
 
     if check == False:
         tmp = tempfile.NamedTemporaryFile(mode='w', delete=True)
-        proto = open("../../models/FlowNet2-SD/FlowNet2-SD_deploy.prototxt.template").readlines()
+        proto = open(args.deployproto).readlines()
         for line in proto:
             for key, value in vars.items():
                 tag = "$%s$" % key
@@ -59,7 +57,7 @@ def opticalflow_NN(img0, img1):
 
             tmp.write(line)
         tmp.flush()
-        net = caffe.Net(tmp.name, "../../models/FlowNet2-SD/FlowNet2-SD_weights.caffemodel.h5", caffe.TEST)
+        net = caffe.Net(tmp.name, args.caffemodel, caffe.TEST)
 
     check = True
     input_dict = {}
@@ -209,9 +207,6 @@ def writeFlow(flow):
     return computeImg(flow.astype(np.float32))
 
 
-ADDRESS = ("", 10000)
-
-
 class Receiving(Thread):
 
     def __init__(self):
@@ -253,7 +248,7 @@ class Receiving(Thread):
             return 0
         return nb_loop
 
-    def __listen_client(self, sc):
+    def __listen_client(self, sc, args):
         first_loop = True
         running = True
         nb_loop = 0
@@ -264,20 +259,20 @@ class Receiving(Thread):
                 img_past = img
             nb_loop = self.fps_counter(nb_loop)
             nb_loop += 1
-            flow = opticalflow_NN(img_past, img)
+            flow = opticalflow_NN(img_past, img, args)
             self.send_image(sc, flow)
             img_past = img
 
-    def run(self):
+    def run(self, args):
         s = socket.socket()
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        s.bind(ADDRESS)
+        s.bind((args.ip, args.port))
         s.listen(1)
         try:
             while True:
                 try:
                     sc, info = s.accept()
-                    self.__listen_client(sc)
+                    self.__listen_client(sc, args)
 
                 except struct.error as e:
                     cv2.destroyAllWindows()
@@ -292,4 +287,11 @@ class Receiving(Thread):
 
 
 if __name__ == "__main__":
-	Receiving().run()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", "--ip", help="default = any ip is allowed else only the ip specified is allowed", type=str, default="")
+    parser.add_argument("-p", "--port", type=int, default=10000)
+    parser.add_argument("-c", "--caffemodel", help='path to model', type=str, default="../../flownet2/models/FlowNet2-SD/FlowNet2-SD_weights.caffemodel.h5")
+    parser.add_argument("-d", "--deployproto",  help='path to deploy prototxt template', type=str, default="../../flownet2/models/FlowNet2-SD/FlowNet2-SD_deploy.prototxt.template")
+    args = parser.parse_args()
+
+    Receiving().run(args)

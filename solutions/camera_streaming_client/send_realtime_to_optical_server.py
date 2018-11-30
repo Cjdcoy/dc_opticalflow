@@ -1,10 +1,11 @@
 import cv2
-import numpy as np
 from threading import Thread
 import socket
 import struct
 import sys
+import argparse
 import cPickle as pickle
+
 
 class VideoCamera(object):
     def __init__(self):
@@ -21,10 +22,6 @@ class VideoCamera(object):
             if success:
                 image = cv2.resize(image, (int(self.width), int(self.height)))
                 return image
-
-
-
-ADDRESS = ("localhost", 10000)
 
 
 class Streaming(Thread):
@@ -59,9 +56,9 @@ class Streaming(Thread):
             unserialized_blob = pickle.loads(blob, encoding='bytes')
         return unserialized_blob
 
-    def run(self):
+    def run(self, ip, port):
         s = socket.socket()
-        s.connect(ADDRESS)
+        s.connect((ip, int(port)))
         print("Connected")
         while True:
             self.send_image(s)
@@ -75,8 +72,13 @@ class Streaming(Thread):
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-i", "--ip", type=str, default="localhost")
+    parser.add_argument("-p", "--port", type=int, default=10000)
+    args = parser.parse_args()
+
     try:
-        Streaming().run()
+        Streaming().run(args.ip, args.port)
     except Exception as e:
         print(e)
 
