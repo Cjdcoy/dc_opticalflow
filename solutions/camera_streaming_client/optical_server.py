@@ -214,50 +214,58 @@ ADDRESS = ("", 10000)
 
 class Receiving(Thread):
 
-    #def __init__(self):
-    #    Thread.__init__(self)
+    def __init__(self):
+        #Thread.__init__(self)
+        self.chrono = time.time()
 
+    def receive_image(self, sc):
+        len_str = sc.recv(4)
+        size = struct.unpack('!i', len_str)[0]
+
+        blob = b''
+        while size > 0:
+            if size >= 4096:
+                data = sc.recv(4096)
+            else:
+                data = sc.recv(size)
+
+            if not data:
+                break
+
+            size -= len(data)
+            blob += data
+        if sys.version_info.major < 3:
+            unserialized_blob = pickle.loads(blob)
+        else:
+            unserialized_blob = pickle.loads(blob, encoding='bytes')
+        return unserialized_blob
+
+    def send_image(self, sc, flow):
+        serialized_data = pickle.dumps(flow, protocol=2)
+        sc.send(struct.pack('!i', len(serialized_data)))
+        sc.send(serialized_data)
+
+    def fps_counter(self, nb_loop):
+        if time.time() - self.chrono > 1:
+            fps = nb_loop / (time.time() - self.chrono)
+            self.chrono = time.time()
+            print(fps)
+            return 0
+        return nb_loop
 
     def __listen_client(self, sc):
         first_loop = True
         running = True
         nb_loop = 0
-        one_fps = 1
-        start_time = time.time()
         while running:
-            # receive size
-            len_str = sc.recv(4)
-            size = struct.unpack('!i', len_str)[0]
-            #print('size:', size)
-
-            img_str = b''
-            while size > 0:
-                if size >= 4096:
-                    data = sc.recv(4096)
-                else:
-                    data = sc.recv(size)
-
-                if not data:
-                    break
-
-                size -= len(data)
-                img_str += data
-            img = cv2.imdecode(np.fromstring(img_str, dtype=np.uint8), cv2.IMREAD_COLOR)
+            img = self.receive_image(sc)
             if first_loop:
                 first_loop = False
                 img_past = img
-            if time.time() - start_time > one_fps:
-                fps = nb_loop / (time.time() - start_time)
-                start_time = time.time()
-                print(fps)
-                nb_loop = 0
+            nb_loop = self.fps_counter(nb_loop)
             nb_loop += 1
             flow = opticalflow_NN(img_past, img)
-            serialized_data = pickle.dumps(flow, protocol=2)
-            sc.send(struct.pack('!i', len(serialized_data)))
-            sc.send(serialized_data)
-            if cv2.waitKey(1) == 27:
-                break
+            self.send_image(sc, flow)
             img_past = img
 
     def run(self):
@@ -265,9 +273,6 @@ class Receiving(Thread):
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         s.bind(ADDRESS)
         s.listen(1)
-        # s = socket.socket()
-        # s.connect(ADDRESS)
-
         try:
             while True:
                 try:
@@ -278,6 +283,7 @@ class Receiving(Thread):
                     cv2.destroyAllWindows()
 
         except Exception as e:
+            print(e)
             pass
 
         finally:

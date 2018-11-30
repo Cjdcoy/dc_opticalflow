@@ -20,8 +20,7 @@ class VideoCamera(object):
             success, image = self.video.read()
             if success:
                 image = cv2.resize(image, (int(self.width), int(self.height)))
-                ret, jpeg = cv2.imencode('.jpg', image)
-                return jpeg.tobytes()
+                return image
 
 
 
@@ -31,57 +30,53 @@ ADDRESS = ("localhost", 10000)
 class Streaming(Thread):
 
     def __init__(self):
-        #Thread.__init__(self)
+        Thread.__init__(self)
         self.cap = VideoCamera()
+
+    def send_image(self, s):
+        image = self.cap.get_frame()
+        serialized_data = pickle.dumps(image, protocol=2)
+        s.send(struct.pack('!i', len(serialized_data)))
+        s.send(serialized_data)
+
+    def receive_image(self, s):
+        len_str = s.recv(4)
+        size = struct.unpack('!i', len_str)[0]
+        blob = b''
+        while size > 0:
+            if size >= 4096:
+                data = s.recv(4096)
+            else:
+                data = s.recv(size)
+            if not data:
+                break
+            size -= len(data)
+            blob += data
+
+        if sys.version_info.major < 3:
+            unserialized_blob = pickle.loads(blob)
+        else:
+            unserialized_blob = pickle.loads(blob, encoding='bytes')
+        return unserialized_blob
 
     def run(self):
         s = socket.socket()
         s.connect(ADDRESS)
+        print("Connected")
+        while True:
+            self.send_image(s)
+            flow = self.receive_image(s)
 
-        print("Wait for connection")
-        try:
-            print("Video client connected:, info")
-
-            while True:
-                # get image surface
-                image = self.cap.get_frame()
-                #print(' Buffer size is %s', sc.buffer_size)
-                s.send(struct.pack('!i', len(image)))
-                s.send(image)
-
-                len_str = s.recv(4)
-                size = struct.unpack('!i', len_str)[0]
-                # print('size:', size)
-
-                img_str = b''
-                while size > 0:
-                    if size >= 4096:
-                        data = s.recv(4096)
-                    else:
-                        data = s.recv(size)
-
-                    if not data:
-                        break
-
-                    size -= len(data)
-                    img_str += data
-                if sys.version_info.major < 3:
-                    unserialized_input = pickle.loads(img_str)
-                else:
-                    unserialized_input = pickle.loads(img_str, encoding='bytes')
-                cv2.imshow('opticalflow received', unserialized_input)
-                if cv2.waitKey(1) == 27:
-                    sys.exit(0)
-
-
-        except Exception as e:
-            print(e)
-            s.close()
-        finally:
-            print("Closing socket and exit")
-            s.close()
+            cv2.imshow('opticalflow received', flow)
+            if cv2.waitKey(1) == 27:
+                break
+        print("Closing socket and exit")
+        s.close()
 
 
 if __name__ == "__main__":
-    Streaming().run()
+    try:
+        Streaming().run()
+    except Exception as e:
+        print(e)
 
