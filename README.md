@@ -30,5 +30,5 @@ End with an example of getting some data out of the system or using it for a lit
 - [ ] the client is able to save the streamed returned by the server
 - [ ] client send video, server compute it and return an opticalflow video
 
-![](https://github.com/Cjdcoy/opticalflow_utilities/blob/master/documents/SD2.gif)
+![](https://github.com/Cjdcoy/opticalflow_utilities/blob/master/documents/OF.gif)
 
