@@ -26,9 +26,10 @@ End with an example of getting some data out of the system or using it for a lit
 - [x] opticalflow in realtime
 
 ### Cloud:
-- [x] client send webcam stream, server compute opticalflow and return the result to the client
-- [ ] the client is able to save the streamed returned by the server
-- [ ] client send video, server compute it and return an opticalflow video
+- [x] send webcam stream, server compute opticalflow and return the result to the client
+- [x] send x videos, server compute opticalflow and return the result to the client
+- [x] send x images, server compute opticalflow and return the result to the client
+- [ ] client is able to save the opticalflow received
 
 ![](https://github.com/Cjdcoy/opticalflow_utilities/blob/master/documents/OF.gif)
 
