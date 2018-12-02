@@ -264,6 +264,7 @@ class Receiving(Thread):
             self.send_image(sc, flow)
             img_past = img
 
+
     def run(self, args):
         s = socket.socket()
         s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -277,13 +278,12 @@ class Receiving(Thread):
 
                 except struct.error as e:
                     cv2.destroyAllWindows()
-
         except Exception as e:
             print(e)
             pass
 
         finally:
-            print("Closing socket and exit")
+            print("\nClosing socket and exit")
             s.close()
 
 
@@ -296,5 +296,7 @@ if __name__ == "__main__":
     parser.add_argument("-f", "--fps",  help='1 to print fps', type=int, default=0, choices=[0, 1])
 
     args = parser.parse_args()
-
-    Receiving().run(args)
+    try:
+        Receiving().run(args)
+    except KeyboardInterrupt:
+        print("exit key pressed, closing.")
