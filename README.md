@@ -31,5 +31,8 @@ End with an example of getting some data out of the system or using it for a lit
 - [x] send x images, server compute opticalflow and return the result to the client
 - [ ] client is able to save the opticalflow received
 
+### Global
+- [ ] add the choice to select any algorithm
+
 ![](https://github.com/Cjdcoy/opticalflow_utilities/blob/master/documents/OF.gif)
 
