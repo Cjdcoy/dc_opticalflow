@@ -9,26 +9,18 @@ from math import ceil
 import time
 import PIL
 
-#USAGE
-#python2 optical_realtime.py ../../models/FlowNet2-KITTI/FlowNet2-KITTI_weights.caffemodel.h5 ../../models/FlowNet2-KITTI/FlowNet2-KITTI_deploy.prototxt.template
-#python2 optical_realtime.py ../../models/FlowNet2-Sintel/FlowNet2-CSS-Sintel_weights.caffemodel.h5 ../../models/FlowNet2-Sintel/FlowNet2-CSS-Sintel_deploy.prototxt.template
-#python2 optical_realtime.py ../../models/FlowNet2-SD/FlowNet2-SD_weights.caffemodel.h5 ../../models/FlowNet2-SD/FlowNet2-SD_deploy.prototxt.template
-
-#python2 optical_realtime.py ../../models/FlowNet2/FlowNet2_weights.caffemodel.h5 ../../models/FlowNet2/FlowNet2_deploy.prototxt.template
-
-#python2 optical_realtime.py ../../models/FlowNet2-CSS-ft-sd/FlowNet2-CSS-ft-sd_weights.caffemodel.h5 ../../models/FlowNet2-CSS-ft-sd/FlowNet2-CSS-ft-sd_deploy.prototxt.template
-#python2 optical_realtime.py ../../models/FlowNet2-css-ft-sd/FlowNet2-css-ft-sd_weights.caffemodel.h5 ../../models/FlowNet2-css-ft-sd/FlowNet2-css-ft-sd_deploy.prototxt.template
-
-#yes "python2 optical_realtime.py ../../models/FlowNet2-SD/FlowNet2-SD_weights.caffemodel.h5 ../../models/FlowNet2-SD/FlowNet2-SD_deploy.prototxt.template &" | head -n 4 | bash
-
+#python2 optical_realtime.py -c ../../flownet2/models/FlowNet2-SD/FlowNet2-SD_weights.caffemodel.h5 -d ../../flownet2/models/FlowNet2-SD/FlowNet2-SD_deploy.prototxt.template -pre 0 -s optical_output
 parser = argparse.ArgumentParser()
+parser.add_argument("-c", "--caffemodel", help='path to model', type=str, default="../../flownet2/models/FlowNet2-SD/FlowNet2-SD_weights.caffemodel.h5")
+parser.add_argument("-d", "--deployproto",  help='path to deploy prototxt template', type=str, default="../../flownet2/models/FlowNet2-SD/FlowNet2-SD_deploy.prototxt.template")
 
-parser.add_argument('caffemodel', help='path to model')
-parser.add_argument('deployproto', help='path to deploy prototxt template')
-#parser.add_argument('width', help='set width, default 320', default=320, type=int)
-#parser.add_argument('height', help='set hight, default 240', default=240, type=int)
-parser.add_argument('--verbose', help='whether to output all caffe logging',
-                        action='store_true')
+parser.add_argument('--width', help='set width, default 320', default=320, type=int)
+parser.add_argument('--height', help='set hight, default 240', default=240, type=int)
+parser.add_argument("-pre", "--preview", help="[0] image (default), [1] image+fps, [2] print+image+fps, [3] print+image",
+                    type=int, default=0, choices=[0, 1, 2, 3])
+parser.add_argument("-s", "--save", help="save flow under [string].avi or save videos/images in folder [string] (empty/default: no save)", type=str, default="")
+parser.add_argument("-f", "--fps", help="choose how many fps will have the video you receive from the server", type=int, default=20)
+parser.add_argument('--verbose', help='whether to output all caffe logging', action='store_true')
 args = parser.parse_args()
 
 if not args.verbose:
@@ -38,12 +30,13 @@ caffe.set_mode_gpu()
 check = False
 tmp = None
 net = None
-def opticalflow_NN(img0, img1, args):
+
+def opticalflow(img0, img1, args):
     global check
     global caffe
     global tmp
-
     global net
+
     num_blobs = 2
     input_data = []
     if len(img0.shape) < 3: input_data.append(img0[np.newaxis, np.newaxis, :, :])
@@ -51,17 +44,14 @@ def opticalflow_NN(img0, img1, args):
     if len(img1.shape) < 3: input_data.append(img1[np.newaxis, np.newaxis, :, :])
     else:                   input_data.append(img1[np.newaxis, :, :, :].transpose(0, 3, 1, 2)[:, [2, 1, 0], :, :])
 
-
     width = input_data[0].shape[3]
     height = input_data[0].shape[2]
     vars = {}
     vars['TARGET_WIDTH'] = width
     vars['TARGET_HEIGHT'] = height
-
     divisor = 64.
     vars['ADAPTED_WIDTH'] = int(ceil(width/divisor) * divisor)
     vars['ADAPTED_HEIGHT'] = int(ceil(height/divisor) * divisor)
-
     vars['SCALE_WIDTH'] = width / float(vars['ADAPTED_WIDTH']);
     vars['SCALE_HEIGHT'] = height / float(vars['ADAPTED_HEIGHT']);
 
@@ -72,7 +62,6 @@ def opticalflow_NN(img0, img1, args):
             for key, value in vars.items():
                 tag = "$%s$" % key
                 line = line.replace(tag, str(value))
-
             tmp.write(line)
         tmp.flush()
         net = caffe.Net(tmp.name, args.caffemodel, caffe.TEST)
@@ -80,7 +69,6 @@ def opticalflow_NN(img0, img1, args):
     input_dict = {}
     for blob_idx in range(num_blobs):
         input_dict[net.inputs[blob_idx]] = input_data[blob_idx]
-
 #
 # There is some non-deterministic nan-bug in caffe
 # it seems to be a race-condition
@@ -88,48 +76,36 @@ def opticalflow_NN(img0, img1, args):
     i = 1
     while i<=5:
         i+=1
-
         net.forward(**input_dict)
-
         containsNaN = False
         for name in net.blobs:
             blob = net.blobs[name]
             has_nan = np.isnan(blob.data[...]).any()
-
             if has_nan:
-                #print('blob %s contains nan' % name)
                 containsNaN = True
-
         if not containsNaN:
-            #print('Succeeded.')
             break
         else:
             print('**************** FOUND NANs, RETRYING ****************')
-
-
     blob = np.squeeze(net.blobs['predict_flow_final'].data).transpose(1, 2, 0)
-    return writeFlow(blob)
+    return write_flow(blob)
+
 
 def readFlow(name):
     if name.endswith('.pfm') or name.endswith('.PFM'):
         return readPFM(name)[0][:,:,0:2]
-
     f = open(name, 'rb')
-
     header = f.read(4)
     if header.decode("utf-8") != 'PIEH':
         raise Exception('Flow file header does not contain PIEH')
-
     width = np.fromfile(f, np.int32, 1).squeeze()
     height = np.fromfile(f, np.int32, 1).squeeze()
-
     flow = np.fromfile(f, np.float32, width * height * 2).reshape((height, width, 2))
-
     return flow.astype(np.float32)
 
-TAG_FLOAT = 202021.25
 
 def read_flow(file):
+    TAG_FLOAT = 202021.25
     assert type(file) is str, "file is not str %r" % str(file)
     assert os.path.isfile(file) is True, "file does not exist %r" % str(file)
     assert file[-4:] == '.flo', "file ending is not .flo %r" % file[-4:]
@@ -146,7 +122,8 @@ def read_flow(file):
     print(flow)
     return flow
 
-def makeColorwheel():
+
+def make_color_wheel():
     #  color encoding scheme
     #   adapted from the color circle idea described at
     #   http://members.shaw.ca/quadibloc/other/colint.htm
@@ -185,8 +162,9 @@ def makeColorwheel():
     colorwheel[col:MR+col, 0] = 255
     return  colorwheel
 
-def computeColor(u, v):
-    colorwheel = makeColorwheel();
+
+def compute_color(u, v):
+    colorwheel = make_color_wheel()
     nan_u = np.isnan(u)
     nan_v = np.isnan(v)
     nan_u = np.where(nan_u)
@@ -221,20 +199,18 @@ def computeColor(u, v):
     return img.astype(np.uint8)
 
 
-def computeImg(flow):
+def compute_image(flow):
     eps = sys.float_info.epsilon
     UNKNOWN_FLOW_THRESH = 1e9
     UNKNOWN_FLOW = 1e10
     u = flow[: , : , 0]
     v = flow[: , : , 1]
-
     maxu = -999
     maxv = -999
     minu = 999
     minv = 999
-
     maxrad = -1
-    #fix unknown flow
+
     greater_u = np.where(u > UNKNOWN_FLOW_THRESH)
     greater_v = np.where(v > UNKNOWN_FLOW_THRESH)
     u[greater_u] = 0
@@ -244,70 +220,94 @@ def computeImg(flow):
 
     maxu = max([maxu, np.amax(u)])
     minu = min([minu, np.amin(u)])
-
     maxv = max([maxv, np.amax(v)])
     minv = min([minv, np.amin(v)])
     rad = np.sqrt(np.multiply(u,u)+np.multiply(v,v))
     maxrad = max([maxrad, np.amax(rad)])
-    #print('max flow: %.4f flow range: u = %.3f .. %.3f; v = %.3f .. %.3f\n' % (maxrad, minu, maxu, minv, maxv))
-
     u = u/(maxrad+eps)
     v = v/(maxrad+eps)
-    img = computeColor(u, v)
+    img = compute_color(u, v)
     return img
 
 
-def writeFlow(flow):
-    return computeImg(flow.astype(np.float32))
+def write_flow(flow):
+    return compute_image(flow.astype(np.float32))
 
-start_time = time.time()
-def show_webcam(args, mirror=False):
-    global start_time
-    cam = cv2.VideoCapture(0) #/home/cjdcoy/Downloads/Office/v10.avi
-    width = cam.get(cv2.CAP_PROP_FRAME_WIDTH) /2
-    height = cam.get(cv2.CAP_PROP_FRAME_HEIGHT) /2
-    print(width, height)
-    ret_val, prev_img = cam.read()
-    prev_img = cv2.resize(prev_img, (int(width), int(height)))
-    i = 0
-    x = 1
-    fps = 0
-    while True:
-        i += 1
-        ret_val, actual_img = cam.read()
-        if ret_val == True:
-            actual_img = cv2.resize(actual_img, (int(width), int(height)))
-            if (time.time() - start_time) > x:
-                fps = i / (time.time() - start_time)
-                start_time = time.time()
-                i = 0
 
-            flow_img = opticalflow_NN(prev_img, actual_img, args)
+class FpsMetter(object):
+    def __init__(self):
+        self.chrono = time.time()
+        self.fps = 0
+
+    def get_fps(self, nb_loop):
+        if time.time() - self.chrono > 1:
+            self.fps = nb_loop / (time.time() - self.chrono)
+            self.chrono = time.time()
+            if args.preview > 1:
+                print(self.fps)
+            return 0
+        nb_loop += 1
+        return nb_loop
+
+
+class OpticalRealtime(object):
+    def __init__(self):
+        self.cap = cv2.VideoCapture(0)
+        self.fpsMetter = FpsMetter()
+        self.width = args.width
+        self.height = args.height
+        self.fourcc = cv2.VideoWriter_fourcc(*'XVID')
+        self.videoFps = args.fps
+        if len(args.save) > 0:
+            self.out = cv2.VideoWriter(args.save + ".avi", self.fourcc, args.fps, (args.width, args.height))
+
+    def __del__(self):
+        self.cap.release()
+
+    def get_frame(self):
+        while True:
+            success, image = self.cap.read()
+            if success:
+                image = cv2.resize(image, (self.width, self.height))
+                return success, image
+
+    def save_flow(self, flow):
+        self.out.write(flow)
+
+    def preview(self, nb_loop, flow):
+        nb_loop = self.fpsMetter.get_fps(nb_loop)
+        if args.preview > 0 and args.preview != 3:
             font = cv2.FONT_HERSHEY_SIMPLEX
-            cv2.putText(flow_img, "fps: "+ "{:1.2f}".format(fps), (10, 20), font, 0.5, (10, 10, 10), 2,
-                        cv2.LINE_AA)
-            cv2.imshow('opticalflow', flow_img)
-            cv2.imshow('webcam', actual_img)
-            if cv2.waitKey(1) == 27:
-                break  # esc to quit
-            prev_img = actual_img
-        else:
-            break
-    cam.release()
-    cv2.destroyAllWindows()
+            cv2.putText(flow, "fps: " + "{:1.2f}".format(self.fpsMetter.fps), (10, 20),
+                        font, 0.5, (10, 10, 10), 2, cv2.LINE_AA)
+        cv2.imshow('opticalflow received', flow)
+        if cv2.waitKey(1) & 0xFF == 27:
+            return -1
+        return nb_loop
+
+    def run_rendering(self):
+        success, prev_img = self.get_frame()
+        if not success:
+            sys.exit(0)
+        nb_loop = 0
+        while True:
+            ret_val, actual_img = self.get_frame()
+            if ret_val:
+                actual_img = cv2.resize(actual_img, (int(args.width), int(args.height)))
+                flow_img = opticalflow(prev_img, actual_img, args)
+                nb_loop = self.preview(nb_loop, flow_img)
+                if len(args.save) > 0:
+                    self.save_flow(flow_img)
+                if nb_loop == -1:
+                    break
+                prev_img = actual_img
+            else:
+                break
+        cv2.destroyAllWindows()
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('caffemodel', help='path to model')
-    parser.add_argument('deployproto', help='path to deploy prototxt template')
-    #parser.add_argument('width', default=320, type=int)
-    #parser.add_argument('height', default=240, type=int)
-    parser.add_argument('--verbose', help='whether to output all caffe logging',
-                        action='store_true')
-
-    args = parser.parse_args()
-    show_webcam(args, mirror=True)
+    OpticalRealtime().run_rendering()
 
 
 if __name__ == '__main__':

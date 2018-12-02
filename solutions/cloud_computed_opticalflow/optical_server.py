@@ -283,7 +283,7 @@ class Receiving(Thread):
             pass
 
         finally:
-            print("\nClosing socket and exit")
+            print("\nClosing socket.")
             s.close()
 
 

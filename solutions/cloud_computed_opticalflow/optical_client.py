@@ -19,7 +19,6 @@ class VideoCamera(object):
         if len(save) > 0:
             self.out = cv2.VideoWriter(save + ".avi", self.fourcc, fps, (width, height))
 
-
     def __del__(self):
         self.video.release()
 
@@ -33,6 +32,7 @@ class VideoCamera(object):
     def save_flow(self, flow):
         self.out.write(flow)
 
+
 class VideoList(object):
     def __init__(self, width=320, height=240, list="videoList", save="", fps=20):
         self.video_list = open(list, 'r').readlines()
@@ -42,11 +42,11 @@ class VideoList(object):
         self.height = height
         self.fourcc = cv2.VideoWriter_fourcc(*'XVID')
         self.fps = fps
+        self.save = save
         if len(save) > 0:
             if not os.path.exists(save):
                 os.makedirs(save)
-            print(save + "/" + self.video_list[self.cursor].replace("\n", ""))
-            self.out = cv2.VideoWriter(save + "/" + str(self.cursor) + ".avi", self.fourcc, fps, (width, height))
+            self.out = cv2.VideoWriter(self.save + "/" + str(self.cursor) + ".avi", self.fourcc, fps, (width, height))
 
     def __del__(self):
         self.video.release()
@@ -57,7 +57,7 @@ class VideoList(object):
             self.video = cv2.VideoCapture(self.video_list[self.cursor].replace("\n", ""))
             if save:
                 self.out.release()
-                self.out = cv2.VideoWriter(save + "/" + str(self.cursor) + ".avi", self.fourcc, self.fps, (self.width,  self.height))
+                self.out = cv2.VideoWriter(self.save + "/" + str(self.cursor) + ".avi", self.fourcc, self.fps, (self.width,  self.height))
 
     def get_frame(self, save):
         success, image = self.video.read()
@@ -143,7 +143,7 @@ class Streaming(Thread):
             unserialized_blob = pickle.loads(blob, encoding='bytes')
         return unserialized_blob
 
-    def fps_counter(self, args, nb_loop):
+    def fps_counter(self, nb_loop):
         if time.time() - self.chrono > 1:
             self.fps = nb_loop / (time.time() - self.chrono)
             self.chrono = time.time()
@@ -153,8 +153,8 @@ class Streaming(Thread):
         nb_loop += 1
         return nb_loop
 
-    def preview(self, args, nb_loop, flow):
-        nb_loop = self.fps_counter(args, nb_loop)
+    def preview(self, nb_loop, flow):
+        nb_loop = self.fps_counter(nb_loop)
         if args.preview > 0 and args.preview != 3:
             font = cv2.FONT_HERSHEY_SIMPLEX
             cv2.putText(flow, "fps: " + "{:1.2f}".format(self.fps), (10, 20),
@@ -168,18 +168,15 @@ class Streaming(Thread):
     def run(self):
         s = socket.socket()
         s.connect((args.ip, int(args.port)))
-        print("Connected")
-        save = False
-        if len(args.save) > 0:
-            save = True
         nb_loop = 0
 
+        print("Connected")
         while True:
             self.send_image(s)
             flow = self.receive_image(s)
-            if save:
+            if len(args.save) > 0:
                 self.cap.save_flow(flow)
-            nb_loop = self.preview(args, nb_loop, flow)
+            nb_loop = self.preview(nb_loop, flow)
             if nb_loop == -1:
                 break
 
@@ -197,7 +194,7 @@ if __name__ == "__main__":
     parser.add_argument("-pre", "--preview",  help="[0] image (default), [1] image+fps, [2] print+image+fps, [3] print+image", type=int, default=0, choices=[0, 1, 2, 3])
 
     parser.add_argument("-m", "--mode", help="[0] stream (default), [1] video, [2] image", type=int, default=0, choices=[0, 1, 2])
-    parser.add_argument("-l", "--list", help="file containing image/video list. Format: \"path\\npath...\"", type=str, default="imageList")
+    parser.add_argument("-l", "--list", help="file containing image/video list. Format: \"path\\npath...\"", type=str, default="video_list_example")
 
     parser.add_argument("-s", "--save", help="save flow under [string].avi or save videos/images in folder [string] (empty/default: no save)", type=str, default="")
     parser.add_argument("-f", "--fps", help="choose how many fps will have the video you receive from the server", type=int, default=20)
