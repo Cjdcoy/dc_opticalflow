@@ -29,7 +29,7 @@ End with an example of getting some data out of the system or using it for a lit
 - [x] send webcam stream, server compute opticalflow and return the result to the client
 - [x] send x videos, server compute opticalflow and return the result to the client
 - [x] send x images, server compute opticalflow and return the result to the client
-- [ ] client is able to save the opticalflow received
+- [x] client is able to save anything the server returns
 
 ### Global
 - [ ] add the choice to select any algorithm
