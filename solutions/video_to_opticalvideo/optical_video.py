@@ -334,12 +334,12 @@ class OpticalVideoList(object):
     def estimate_compute_time(self, fps):
         self.estimation = False
         total_nb_frame = 0
-        print("start estimation (", fps, "fps)")
+        print("Start estimation, estimated fps:", "{:1.2f}".format(fps))
         for i in range(0, len(self.video_list)):
             cap = cv2.VideoCapture(self.video_list[i].replace("\n", ""))
             frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             if args.estimation == 2:
-                print("video", i, ":", frames, "(" + "{:1.2f}".format(total_nb_frame / fps), "seconds)")
+                print("video", i, ":", frames, "(" + "{:1.2f}".format(frames / fps), "seconds)")
             total_nb_frame += frames
         print("\nThere are", total_nb_frame, "frames to compute")
         print("Total compute time:")
