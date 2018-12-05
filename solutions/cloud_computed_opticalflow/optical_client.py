@@ -160,9 +160,10 @@ class Streaming(Thread):
             cv2.putText(flow, "fps: " + "{:1.2f}".format(self.fps), (10, 20),
                         font, 0.5, (10, 10, 10), 2,
                         cv2.LINE_AA)
-        cv2.imshow('opticalflow received', flow)
-        if cv2.waitKey(1) & 0xFF == 27:
-            return -1
+        if args.preview > -1:
+            cv2.imshow('opticalflow received', flow)
+            if cv2.waitKey(1) & 0xFF == 27:
+                return -1
         return nb_loop
 
     def run(self):
@@ -191,7 +192,7 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--port", type=int, default=10000)
     parser.add_argument("--width", help="width of preview / save", type=int, default=320)
     parser.add_argument("--height", help="height of preview / save", type=int, default=240)
-    parser.add_argument("-pre", "--preview",  help="[0] image (default), [1] image+fps, [2] print+image+fps, [3] print+image", type=int, default=0, choices=[0, 1, 2, 3])
+    parser.add_argument("-pre", "--preview", help="[-1] no preview [0] image (default), [1] image+fps, [2] print+image+fps, [3] print+image", type=int, default=0, choices=[-1, 0, 1, 2, 3])
 
     parser.add_argument("-m", "--mode", help="[0] stream (default), [1] video, [2] image", type=int, default=0, choices=[0, 1, 2])
     parser.add_argument("-l", "--list", help="file containing image/video list. Format: \"path\\npath...\"", type=str, default="video_list_example")

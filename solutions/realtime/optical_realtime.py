@@ -16,8 +16,8 @@ parser.add_argument("-d", "--deployproto",  help='path to deploy prototxt templa
 
 parser.add_argument('--width', help='set width, default 320', default=320, type=int)
 parser.add_argument('--height', help='set hight, default 240', default=240, type=int)
-parser.add_argument("-pre", "--preview", help="[0] image (default), [1] image+fps, [2] print+image+fps, [3] print+image",
-                    type=int, default=0, choices=[0, 1, 2, 3])
+parser.add_argument("-pre", "--preview", help="[-1] no preview [0] image (default), [1] image+fps, [2] print+image+fps, [3] print+image",
+                    type=int, default=0, choices=[-1, 0, 1, 2, 3])
 parser.add_argument("-s", "--save", help="save flow under [string].avi or save videos/images in folder [string] (empty/default: no save)", type=str, default="")
 parser.add_argument("-f", "--fps", help="choose how many fps will have the video you receive from the server", type=int, default=20)
 parser.add_argument('--verbose', help='whether to output all caffe logging', action='store_true')
@@ -280,9 +280,10 @@ class OpticalRealtime(object):
             font = cv2.FONT_HERSHEY_SIMPLEX
             cv2.putText(flow, "fps: " + "{:1.2f}".format(self.fpsMetter.fps), (10, 20),
                         font, 0.5, (10, 10, 10), 2, cv2.LINE_AA)
-        cv2.imshow('opticalflow received', flow)
-        if cv2.waitKey(1) & 0xFF == 27:
-            return -1
+        if args.preview > -1:
+            cv2.imshow('opticalflow received', flow)
+            if cv2.waitKey(1) & 0xFF == 27:
+                return -1
         return nb_loop
 
     def run_rendering(self):
