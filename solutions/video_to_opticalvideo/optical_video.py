@@ -266,7 +266,6 @@ class OpticalVideoList(object):
         if len(args.save) > 0:
             if not os.path.exists(args.save):
                 os.makedirs(args.save)
-            print(args.save + "/" + self.find_video_name(self.video_list[self.cursor].replace("\n", "")))
             self.out = cv2.VideoWriter(args.save + "/" + self.find_video_name(self.video_list[self.cursor].replace("\n", "")), self.fourcc, args.fps, (args.width, args.height))
 
     def __del__(self):
@@ -275,8 +274,8 @@ class OpticalVideoList(object):
     def find_video_name(self, path):
         find_last_slash = path.rfind("/")
         find_dot = path.rfind(".")
-        path = path[find_last_slash + 1:find_dot - 1] + "avi" #+1 to get rid of the "/"
-        print(path)
+        path = path[find_last_slash + 1:find_dot] + ".avi" #+1 to get rid of the "/"
+        print("computing", path)
         return path
 
     def load_new_video(self, save):
