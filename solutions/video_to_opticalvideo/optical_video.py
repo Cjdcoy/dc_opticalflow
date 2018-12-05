@@ -266,7 +266,7 @@ class OpticalVideoList(object):
         if len(args.save) > 0:
             if not os.path.exists(args.save):
                 os.makedirs(args.save)
-            self.out = cv2.VideoWriter(args.save + "/" + self.find_video_name(self.video_list[self.cursor].replace("\n", "")), self.fourcc, args.fps, (args.width, args.height))
+            self.out = cv2.VideoWriter(args.save + "/" + str(self.cursor) + ".avi", self.fourcc, args.fps, (args.width, args.height))
 
     def __del__(self):
         self.video.release()
@@ -284,7 +284,7 @@ class OpticalVideoList(object):
             self.video = cv2.VideoCapture(self.video_list[self.cursor].replace("\n", ""))
             if save:
                 self.out.release()
-                self.out = cv2.VideoWriter(args.save + "/" + self.find_video_name(self.video_list[self.cursor].replace("\n", "")), self.fourcc, self.videoFps, (self.width,  self.height))
+                self.out = cv2.VideoWriter(args.save + "/" + str(self.cursor) + ".avi", self.fourcc, self.videoFps, (self.width,  self.height))
 
     def get_frame(self, save):
         success, image = self.video.read()
