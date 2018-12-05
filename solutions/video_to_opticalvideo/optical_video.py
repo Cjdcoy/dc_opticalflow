@@ -309,6 +309,7 @@ class OpticalVideoList(object):
             return success
         else:
             self.load_new_video(save)
+            print("loaded video number", self.cursor)
             success, image = self.video.read()
         return success
 
@@ -333,6 +334,7 @@ class OpticalVideoList(object):
     def estimate_compute_time(self, fps):
         self.estimation = False
         total_nb_frame = 0
+        print("start estimation")
         while True:
             ret_val = self.fast_get_frame(False)
             total_nb_frame += 1
@@ -343,10 +345,10 @@ class OpticalVideoList(object):
         self.cursor = 0
         print("there are", total_nb_frame, "frames to compute")
         print("Compute time:")
-        print("{:1.2f}".format(total_nb_frame / fps), "seconds")
-        print("{:1.2f}".format(total_nb_frame / fps / 60), "minutes")
-        print("{:1.2f}".format(total_nb_frame / fps / 60 / 60), "hours")
-        print("{:1.2f}".format(total_nb_frame / fps / 60 / 60 / 24), "days")
+        print(time.strftime("%S", time.gmtime(total_nb_frame)), "seconds")
+        print(time.strftime("%M:%S", time.gmtime(total_nb_frame)), "minutes")
+        print(time.strftime("%M:%S", time.gmtime(total_nb_frame)), "hours")
+        print(time.strftime("%D:%H:%M:%S", time.gmtime(total_nb_frame)), "days")
 
     def run_rendering(self):
         save = False
