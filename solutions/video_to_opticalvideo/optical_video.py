@@ -22,6 +22,9 @@ parser.add_argument("-l", "--list", help="file containing image/video list. Form
 parser.add_argument("-s", "--save", help="save flow under [string].avi or save videos/images in folder [string] (empty/default: no save)", type=str, default="")
 parser.add_argument("-f", "--fps", help="choose how many fps will have the video you receive from the server", type=int, default=20)
 
+parser.add_argument("-e", "--estimation", help="estimate the computation time", type=int, default=0, choices=[0, 1])
+
+
 parser.add_argument('--verbose', help='whether to output all caffe logging',
                     action='store_true')
 
@@ -263,6 +266,9 @@ class OpticalVideoList(object):
         self.height = args.height
         self.fourcc = cv2.VideoWriter_fourcc(*'XVID')
         self.videoFps = args.fps
+        self.estimation = False
+        if args.estimation == 1:
+            self.estimation = True
         if len(args.save) > 0:
             if not os.path.exists(args.save):
                 os.makedirs(args.save)
@@ -297,11 +303,22 @@ class OpticalVideoList(object):
                 image = cv2.resize(image, (self.width, self.height))
         return success, image
 
+    def fast_get_frame(self, save):
+        success, image = self.video.read()
+        if success:
+            return success
+        else:
+            self.load_new_video(save)
+            success, image = self.video.read()
+        return success
+
     def save_flow(self, flow):
         self.out.write(flow)
 
     def preview(self, nb_loop, flow):
         nb_loop = self.fpsMetter.get_fps(nb_loop)
+        if self.fpsMetter.fps > 1 and self.estimation: #does not estimate if the solution takes more than 1 second per image
+            self.estimate_compute_time(self.fpsMetter.fps)
         if args.preview > 0 and args.preview != 3:
             font = cv2.FONT_HERSHEY_SIMPLEX
             cv2.putText(flow, "fps: " + "{:1.2f}".format(self.fpsMetter.fps), (10, 20),
@@ -312,6 +329,24 @@ class OpticalVideoList(object):
             if cv2.waitKey(1) & 0xFF == 27:
                 return -1
         return nb_loop
+
+    def estimate_compute_time(self, fps):
+        self.estimation = False
+        total_nb_frame = 0
+        while True:
+            ret_val = self.fast_get_frame(False)
+            total_nb_frame += 1
+            if ret_val:
+                continue
+            else:
+                break
+        self.cursor = 0
+        print("there are", total_nb_frame, "frames to compute")
+        print("Compute time:")
+        print("{:1.2f}".format(total_nb_frame / fps), "seconds")
+        print("{:1.2f}".format(total_nb_frame / fps / 60), "minutes")
+        print("{:1.2f}".format(total_nb_frame / fps / 60 / 60), "hours")
+        print("{:1.2f}".format(total_nb_frame / fps / 60 / 60 / 24), "days")
 
     def run_rendering(self):
         save = False
