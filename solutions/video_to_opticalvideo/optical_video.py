@@ -313,8 +313,6 @@ class OpticalVideoList(object):
         return nb_loop
 
     def run_rendering(self):
-        self.find_video_name(
-            "../../dataset/Coffee_room_01/Videos/video (2).avi")
         save = False
         if len(args.save) > 0:
             save = True
