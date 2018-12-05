@@ -266,11 +266,18 @@ class OpticalVideoList(object):
         if len(args.save) > 0:
             if not os.path.exists(args.save):
                 os.makedirs(args.save)
-            print(args.save + "/" + self.video_list[self.cursor].replace("\n", ""))
-            self.out = cv2.VideoWriter(args.save + "/" + str(self.cursor) + ".avi", self.fourcc, args.fps, (args.width, args.height))
+            print(args.save + "/" + self.find_video_name(self.video_list[self.cursor].replace("\n", "")))
+            self.out = cv2.VideoWriter(args.save + "/" + self.find_video_name(self.video_list[self.cursor].replace("\n", "")), self.fourcc, args.fps, (args.width, args.height))
 
     def __del__(self):
         self.video.release()
+
+    def find_video_name(self, path):
+        find_last_slash = path.rfind("/")
+        find_dot = path.rfind(".")
+        path = path[find_last_slash + 1:find_dot] + "avi" #+1 to get rid of the "/"
+        print(path)
+        return path
 
     def load_new_video(self, save):
         self.cursor += 1
@@ -278,7 +285,7 @@ class OpticalVideoList(object):
             self.video = cv2.VideoCapture(self.video_list[self.cursor].replace("\n", ""))
             if save:
                 self.out.release()
-                self.out = cv2.VideoWriter(args.save + "/" + str(self.cursor) + ".avi", self.fourcc, self.videoFps, (self.width,  self.height))
+                self.out = cv2.VideoWriter(args.save + "/" + self.find_video_name(self.video_list[self.cursor].replace("\n", "")), self.fourcc, self.videoFps, (self.width,  self.height))
 
     def get_frame(self, save):
         success, image = self.video.read()
@@ -307,6 +314,8 @@ class OpticalVideoList(object):
         return nb_loop
 
     def run_rendering(self):
+        self.find_video_name(
+            "../../dataset/Coffee_room_01/Videos/video (2).avi")
         save = False
         if len(args.save) > 0:
             save = True
