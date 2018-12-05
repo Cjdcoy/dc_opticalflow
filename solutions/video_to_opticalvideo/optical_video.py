@@ -22,7 +22,7 @@ parser.add_argument("-l", "--list", help="file containing image/video list. Form
 parser.add_argument("-s", "--save", help="save flow under [string].avi or save videos/images in folder [string] (empty/default: no save)", type=str, default="")
 parser.add_argument("-f", "--fps", help="choose how many fps will have the video you receive from the server", type=int, default=20)
 
-parser.add_argument("-e", "--estimation", help="estimate the computation time", type=int, default=0, choices=[0, 1])
+parser.add_argument("-e", "--estimation", help="[0] no computing estimation [1] simple estimate [2] complete estimation", type=int, default=0, choices=[0, 1, 2])
 
 
 parser.add_argument('--verbose', help='whether to output all caffe logging',
@@ -267,7 +267,7 @@ class OpticalVideoList(object):
         self.fourcc = cv2.VideoWriter_fourcc(*'XVID')
         self.videoFps = args.fps
         self.estimation = False
-        if args.estimation == 1:
+        if args.estimation > 0:
             self.estimation = True
         if len(args.save) > 0:
             if not os.path.exists(args.save):
@@ -334,21 +334,19 @@ class OpticalVideoList(object):
     def estimate_compute_time(self, fps):
         self.estimation = False
         total_nb_frame = 0
-        print("start estimation")
-        while True:
-            ret_val = self.fast_get_frame(False)
-            total_nb_frame += 1
-            if ret_val:
-                continue
-            else:
-                break
-        self.cursor = 0
-        print("there are", total_nb_frame, "frames to compute")
-        print("Compute time:")
-        print(time.strftime("%S", time.gmtime(total_nb_frame)), "seconds")
-        print(time.strftime("%M:%S", time.gmtime(total_nb_frame)), "minutes")
-        print(time.strftime("%M:%S", time.gmtime(total_nb_frame)), "hours")
-        print(time.strftime("%D:%H:%M:%S", time.gmtime(total_nb_frame)), "days")
+        print("start estimation (", fps, "fps)")
+        for i in range(0, len(self.video_list)):
+            cap = cv2.VideoCapture(self.video_list[i].replace("\n", ""))
+            frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            if args.estimation == 2:
+                print("video", i, ":", frames, "(" + (frames / fps), "seconds)")
+            total_nb_frame += frames
+        print("\nThere are", total_nb_frame, "frames to compute")
+        print("Total compute time:")
+        print("{:1.2f}".format(total_nb_frame / fps), "seconds")
+        print("{:1.2f}".format(total_nb_frame / fps / 60), "minutes")
+        print("{:1.2f}".format(total_nb_frame / fps / 60 / 60), "hours")
+        print("{:1.2f}".format(total_nb_frame / fps / 60 / 60 / 24), "days")
 
     def run_rendering(self):
         save = False
