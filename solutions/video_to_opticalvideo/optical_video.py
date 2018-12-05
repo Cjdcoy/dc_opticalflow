@@ -272,7 +272,6 @@ class OpticalVideoList(object):
         self.video.release()
 
     def find_video_name(self, path):
-        path = path.replace(" ", "_")
         find_last_slash = path.rfind("/")
         find_dot = path.rfind(".")
         path = path[find_last_slash + 1:find_dot] + ".avi" #+1 to get rid of the "/"
