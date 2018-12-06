@@ -7,6 +7,7 @@ import caffe
 import tempfile
 from math import ceil
 import time
+from datetime import datetime, timedelta
 
 #python2 optical_video.py -c ../../flownet2/models/FlowNet2-SD/FlowNet2-SD_weights.caffemodel.h5 -d ../../flownet2/models/FlowNet2-SD/FlowNet2-SD_deploy.prototxt.template -pre 0 -s test
 parser = argparse.ArgumentParser()
@@ -244,9 +245,14 @@ class FpsMetter(object):
     def __init__(self):
         self.chrono = time.time()
         self.fps = 0
+        self.first_loop = True
+        self.init_finished = False
 
     def get_fps(self, nb_loop):
         if time.time() - self.chrono > 1:
+            if not self.first_loop:
+                self.init_finished = True
+            self.first_loop = False
             self.fps = nb_loop / (time.time() - self.chrono)
             self.chrono = time.time()
             if args.preview > 1:
@@ -276,13 +282,6 @@ class OpticalVideoList(object):
 
     def __del__(self):
         self.video.release()
-
-    def find_video_name(self, path):
-        find_last_slash = path.rfind("/")
-        find_dot = path.rfind(".")
-        path = path[find_last_slash + 1:find_dot] + ".avi" #+1 to get rid of the "/"
-        print("computing", path)
-        return path
 
     def load_new_video(self, save):
         self.cursor += 1
@@ -316,9 +315,30 @@ class OpticalVideoList(object):
     def save_flow(self, flow):
         self.out.write(flow)
 
+    def estimate_compute_time(self, fps):
+        self.estimation = False
+        total_nb_frame = 0
+        print("Calculating compute time...\nEstimated FPS: " + "{:1.2f}".format(
+            fps) + "\n")
+        for i in range(0, len(self.video_list)):
+            cap = cv2.VideoCapture(self.video_list[i].replace("\n", ""))
+            frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            if args.estimation == 2:
+                print("video " + str(i) + ": " + str(
+                    frames) + " frames (" + "{:1.2f}".format(
+                    frames / fps) + " seconds)")
+            total_nb_frame += frames
+        print("\nThere are " + str(total_nb_frame) + " frames to compute")
+        print("Estimated compute time (day, hour, min, sec):")
+        sec = timedelta(seconds=total_nb_frame / fps)
+        d = datetime(1, 1, 1) + sec
+        print("{:02d}".format(d.day - 1) + ":" + "{:02d}".format(
+            d.hour) + ":" + "{:02d}".format(d.minute) + ":" + "{:02d}".format(
+            d.second))
+
     def preview(self, nb_loop, flow):
         nb_loop = self.fpsMetter.get_fps(nb_loop)
-        if self.fpsMetter.fps > 1 and self.estimation: #does not estimate if the solution takes more than 1 second per image
+        if self.fpsMetter.init_finished and self.estimation: #does not estimate if the solution takes more than 1 second per image
             self.estimate_compute_time(self.fpsMetter.fps)
         if args.preview > 0 and args.preview != 3:
             font = cv2.FONT_HERSHEY_SIMPLEX
@@ -331,23 +351,6 @@ class OpticalVideoList(object):
                 return -1
         return nb_loop
 
-    def estimate_compute_time(self, fps):
-        self.estimation = False
-        total_nb_frame = 0
-        print("Start estimation, estimated fps:", "{:1.2f}".format(fps))
-        for i in range(0, len(self.video_list)):
-            cap = cv2.VideoCapture(self.video_list[i].replace("\n", ""))
-            frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            if args.estimation == 2:
-                print("video", i, ":", frames, "(" + "{:1.2f}".format(frames / fps), "seconds)")
-            total_nb_frame += frames
-        print("\nThere are", total_nb_frame, "frames to compute")
-        print("Total compute time:")
-        print("{:1.2f}".format(total_nb_frame / fps), "seconds")
-        print("{:1.2f}".format(total_nb_frame / fps / 60), "minutes")
-        print("{:1.2f}".format(total_nb_frame / fps / 60 / 60), "hours")
-        print("{:1.2f}".format(total_nb_frame / fps / 60 / 60 / 24), "days")
-
     def run_rendering(self):
         save = False
         if len(args.save) > 0:
@@ -358,9 +361,9 @@ class OpticalVideoList(object):
             ret_val, actual_img = self.get_frame(save)
             if ret_val:
                 flow_img = opticalflow_NN(prev_img, actual_img, args)
-                nb_loop = self.preview(nb_loop, flow_img)
                 if len(args.save) > 0:
-                    self.save_flow(flow_img)
+                    self.save_flow(flow_img)                #save video
+                nb_loop = self.preview(nb_loop, flow_img)   #preview / estimated
                 if nb_loop == -1:
                     break
                 prev_img = actual_img

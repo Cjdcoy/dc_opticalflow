@@ -7,6 +7,7 @@ import sys
 import argparse
 import os
 import cPickle as pickle
+from datetime import datetime, timedelta
 
 
 class VideoCamera(object):
@@ -102,8 +103,37 @@ class ImageList(object):
         print(self.save + "/" + str(self.cursor) + ".png")
         cv2.imwrite(self.save + "/" + str(self.cursor) + ".png", flow, [cv2.IMWRITE_PNG_COMPRESSION, 9])
 
+
+class FpsMetter(object):
+    def __init__(self):
+        self.chrono = time.time()
+        self.fps = 0
+        self.first_loop = True
+        self.init_finished = False
+
+    def get_fps(self, nb_loop):
+        if time.time() - self.chrono > 1:
+            if not self.first_loop:
+                self.init_finished = True
+            self.first_loop = False
+            self.fps = nb_loop / (time.time() - self.chrono)
+            self.chrono = time.time()
+            if args.preview > 1:
+                print(self.fps)
+            return 0
+        nb_loop += 1
+        return nb_loop
+
+
 class Streaming(Thread):
     def __init__(self):
+        self.fpsMetter = FpsMetter()
+        self.estimation = False
+#for algorithms that need to load a neural network we pass the first loop otherwise the
+# computing estimation could be rigged
+        self.first_loop = True
+        if args.estimation > 0:
+            self.estimation = True
         #Thread.__init__(self)
         if args.mode == 0:
             self.cap = VideoCamera(args.width, args.height, args.save, args.fps)
@@ -153,11 +183,32 @@ class Streaming(Thread):
         nb_loop += 1
         return nb_loop
 
+    def estimate_compute_time(self, fps):
+        self.estimation = False
+        total_nb_frame = 0
+        print("Calculating compute time...\nEstimated FPS: " + "{:1.2f}".format(fps) + "\n")
+        for i in range(0, len(self.cap.video_list)):
+            cap = cv2.VideoCapture(self.cap.video_list[i].replace("\n", ""))
+            frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            if args.estimation == 2:
+                print("video " + str(i) + ": " + str(frames) + " frames (" + "{:1.2f}".format(frames / fps) + " seconds)")
+            total_nb_frame += frames
+        print("\nThere are " + str(total_nb_frame) + " frames to compute")
+        print("Estimated compute time (day, hour, min, sec):")
+        sec = timedelta(seconds=total_nb_frame / fps)
+        d = datetime(1, 1, 1) + sec
+        print("{:02d}".format(d.day - 1) + ":" + "{:02d}".format(
+            d.hour) + ":" + "{:02d}".format(d.minute) + ":" + "{:02d}".format(
+            d.second))
+
     def preview(self, nb_loop, flow):
-        nb_loop = self.fps_counter(nb_loop)
+        nb_loop = self.fpsMetter.get_fps(nb_loop)
+        # does not estimate for the first loop, and this is reserved to video computing
+        if self.fpsMetter.init_finished and self.estimation and args.mode == 1:
+            self.estimate_compute_time(self.fpsMetter.fps)
         if args.preview > 0 and args.preview != 3:
             font = cv2.FONT_HERSHEY_SIMPLEX
-            cv2.putText(flow, "fps: " + "{:1.2f}".format(self.fps), (10, 20),
+            cv2.putText(flow, "fps: " + "{:1.2f}".format(self.fpsMetter.fps), (10, 20),
                         font, 0.5, (10, 10, 10), 2,
                         cv2.LINE_AA)
         if args.preview > -1:
@@ -180,7 +231,7 @@ class Streaming(Thread):
             nb_loop = self.preview(nb_loop, flow)
             if nb_loop == -1:
                 break
-
+            self.first_loop = False
         s.close()
         cv2.destroyAllWindows()
         print("Socket closed, windows destroyed, exiting.")
@@ -199,6 +250,8 @@ if __name__ == "__main__":
 
     parser.add_argument("-s", "--save", help="save flow under [string].avi or save videos/images in folder [string] (empty/default: no save)", type=str, default="")
     parser.add_argument("-f", "--fps", help="choose how many fps will have the video you receive from the server", type=int, default=20)
+
+    parser.add_argument("-e", "--estimation", help="[0] no computing estimation [1] simple estimate [2] complete estimation (video mode only)", type=int, default=0, choices=[0, 1, 2])
 
     args = parser.parse_args()
     print(args)
