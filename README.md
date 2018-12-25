@@ -6,7 +6,8 @@ kinds of optical flows. For now the optical flow algorithms provided are from <a
 
 ### Install (need apt-get)
 
-this installation script has been made on ubuntu 16.04
+this installation script has been made on ubuntu 16.04.
+Its use is to easily install Flownet 2 caffe models as well as python opencv, numpy....
 
 ```
 sudo apt-get update
