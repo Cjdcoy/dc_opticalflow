@@ -19,25 +19,24 @@ bash build.bash
 Utilities are in the 'solutions' folder at root.<br /> 
 The 'modules' folder at root contain different types of optic flow algorithms that you can easily select.
 
-### select a module
+### 1 - add/select a module
 add a file called ```vision_module.py``` next to a solution
-  Examples:
+#### Examples:
 ```
 cp modules/vision_module_flownet.py solutions/realtime/vision_module.py
 cp modules/vision_module_flownet.py solutions/videos_to_computed_videos/vision_module.py
 ```
 
-### run solutions
-Each solution has many configuration parameters that you can see using ```-h``` flag<br /> 
-Examples:<br /> 
-Apply optic flow in realtime from webcam flux, previsualize and save the flux.
+### 2 - run solutions
+Each solution has many configuration parameters that you can see using ```-h``` flag
+#### Examples:
+Apply optic flow in realtime from webcam flux, previsualize and save the flux.<br /> 
 ```
 cd solutions/realtime
 python2 realtime_vision.py -h
 python2 realtime_vision.py -pre 2 -s save.avi
 ```
-
-Apply optic flow on a video dataset, previsualize, save each video in save_here folder flux + estimate compute time.
+Apply optic flow on a video dataset, previsualize, save each video in save_here folder flux + estimate compute time.<br /> 
 ```
 cd solutions/videos_to_computed_videos
 cp ../../modules/vision_module_absdiff.py vision_module.py
