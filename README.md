@@ -36,7 +36,7 @@ cd solutions/realtime
 python2 realtime_vision.py -h
 python2 realtime_vision.py -pre 2 -s save.avi
 ```
-Apply optic flow on a video dataset, previsualize, save each video in save_here folder flux + estimate compute time.<br /> 
+Apply optic flow on a video dataset, previsualize, save each computed video in 'save_here' folder + estimate compute time.<br /> 
 ```
 cd solutions/videos_to_computed_videos
 cp ../../modules/vision_module_absdiff.py vision_module.py
