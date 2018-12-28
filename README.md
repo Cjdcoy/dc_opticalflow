@@ -31,13 +31,13 @@ cp modules/vision_module_flownet.py solutions/videos_to_computed_videos/vision_m
 Each solution has many configuration parameters that you can see using ```-h``` flag
 #### Examples:
 Apply optic flow in realtime from webcam flux, previsualize and save the flux.<br /> 
-```shell
+```
 cd solutions/realtime
 python2 realtime_vision.py -h
 python2 realtime_vision.py -pre 2 -s save.avi
 ```
 Apply optic flow on a video dataset, previsualize, save each computed video in 'save_here' folder + estimate compute time.<br /> 
-```shell
+```
 cd solutions/videos_to_computed_videos
 cp ../../modules/vision_module_absdiff.py vision_module.py
 python3 videos_vision.py -h
