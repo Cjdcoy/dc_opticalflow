@@ -19,7 +19,7 @@ bash build.bash
 Utilities are in the 'solutions' folder at root.<br /> 
 The 'modules' folder at root contain different types of optic flow algorithms that you can easily select.
 
-### 1 - add/select a module
+### 1 - add/select/create a module
 add a file called ```vision_module.py``` next to a solution
 #### Examples:
 ```
