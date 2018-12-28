@@ -1,7 +1,7 @@
 opticalflow_utilities
 ======================
 The goal of opticalflow_utilies is to provide a pool of scripts that allows you to do whaterver you want with many different 
-kinds of optical flows. For now the optical flow algorithms provided are from <a href="https://github.com/lmb-freiburg/flownet2" target="_blank">flownet2</a><br>.
+kinds of optical flows. For now the optical flow algorithms provided are from <a href="https://github.com/lmb-freiburg/flownet2" target="_blank">flownet2</a>.
 
 
 ## Easy Install FlowNet2 (need apt-get)
