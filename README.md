@@ -4,16 +4,6 @@ The goal of opticalflow_utilies is to provide a pool of scripts that allows you 
 kinds of optical flows. For now the optical flow algorithms provided are from <a href="https://github.com/lmb-freiburg/flownet2" target="_blank">flownet2</a>.
 
 
-## Easy Install FlowNet2 (need apt-get)
-
-this installation script has been made on ubuntu 16.04.
-Its use is to easily install Flownet 2 caffe models as well as python opencv, numpy....
-
-```
-sudo apt-get update
-bash build.bash
-```
-
 ## Usage
 
 Utilities are in the 'solutions' folder at root.<br /> 
@@ -66,4 +56,14 @@ python3 videos_vision.py -pre 1 -e 2 -l video_list_example -s save_here
 
 
 ![](https://github.com/Cjdcoy/opticalflow_utilities/blob/master/documents/OF.gif)
+
+## Easy Install FlowNet2 (need apt-get)
+
+this installation script has been made on ubuntu 16.04.
+Its use is to easily install Flownet 2 caffe models as well as python opencv, numpy....
+
+```
+sudo apt-get update
+bash build.bash
+```
 
