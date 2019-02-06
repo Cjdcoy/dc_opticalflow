@@ -39,16 +39,17 @@ class FpsMetter(object):
 
 
 class OpticalRealtime(object):
-    def __init__(self):
+    def __init__(self, args_m):
+        self.args = args_m
         self.computeImage = ComputeImage()  # COMPUTE IMAGE IS THE MODULE YOU HAVE TO LOAD IN ORDER TO SELECT YOUR ALOORITHM
         self.cap = cv2.VideoCapture(0)
         self.fpsMetter = FpsMetter()
-        self.width = args.width
-        self.height = args.height
+        self.width = self.args.width
+        self.height = self.args.height
         self.fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        self.videoFps = args.fps
-        if len(args.save) > 0:
-            self.out = cv2.VideoWriter(args.save + ".avi", self.fourcc, args.fps, (args.width, args.height))
+        self.videoFps = self.args.fps
+        if len(self.args.save) > 0:
+            self.out = cv2.VideoWriter(self.args.save + ".avi", self.fourcc, args.fps, (args.width, args.height))
 
     def __del__(self):
         self.cap.release()
@@ -75,7 +76,7 @@ class OpticalRealtime(object):
                 return -1
         return nb_loop
 
-    def run_rendering(self):
+    def run(self):
         success, prev_img = self.get_frame()
         if not success:
             sys.exit(0)
@@ -83,10 +84,10 @@ class OpticalRealtime(object):
         while True:
             ret_val, actual_img = self.get_frame()
             if ret_val:
-                actual_img = cv2.resize(actual_img, (int(args.width), int(args.height)))
-                flow_img = self.computeImage.run(prev_img, actual_img, args)
+                actual_img = cv2.resize(actual_img, (int(self.args.width), int(self.args.height)))
+                flow_img = self.computeImage.run(prev_img, actual_img, self.args)
                 nb_loop = self.preview(nb_loop, flow_img)
-                if len(args.save) > 0:
+                if len(self.args.save) > 0:
                     self.save_flow(flow_img)
                 if nb_loop == -1:
                     break
@@ -97,7 +98,7 @@ class OpticalRealtime(object):
 
 
 def main():
-    OpticalRealtime().run_rendering()
+    OpticalRealtime().run()
 
 
 if __name__ == '__main__':
