@@ -3,21 +3,20 @@
 import sys
 import glob, os
 
-from importlib import reload
+from realtime.realtime_vision  import OpticalRealtime
 from PySide2.QtWidgets import QApplication, QLabel, QWidget, QLineEdit, QCheckBox, QPushButton
 from PySide2.QtWidgets import QComboBox
 from cloud_computed_vision.optical_client import Streaming
-from realtime.realtime_vision import OpticalRealtime
 from shutil import copyfile
 
 
 class FieldValue(object):
     def __init__(self, class_widget):
-        self.preview = class_widget.preview.currentIndex()
+        self.preview = class_widget.preview.currentIndex() - 2
         self.mode = class_widget.mode.currentIndex()
 
-        self.width = class_widget.width.text()
-        self.height = class_widget.height.text()
+        self.width = int(class_widget.width.text())
+        self.height = int(class_widget.height.text())
 
         if not class_widget.save.isChecked():
             self.save = ""
@@ -36,15 +35,19 @@ class FieldValue(object):
 
 
 class QtOpticalflowInterfaceCloud(QWidget):
-    PREVIEW = ["image",
-               "image+fps",
-               "print+image+fps",
-               "print+image",
-               ]
+    PREVIEW = [
+        "no preview",
+        "print fps",
+        "image (default)",
+        "image+fps",
+        "print+image+fps",
+        "print+image"
+    ]
 
-    MODE = ["stream",
-            "video",
-            ]
+    MODE = [
+        "stream",
+        "video",
+    ]
 
     ESTIMATION = [
         "no computing estimation",
@@ -183,7 +186,7 @@ class QtOpticalflowInterfaceCloud(QWidget):
 
     def reset_window(self):
         copyfile("../modules/" + self.module_vision.currentText(), "./realtime/vision_module.py")
-        reload(OpticalRealtime)
+
         if self.compute_location.currentText() == "cloud":
             self.streaming = Streaming(FieldValue(self))
         else:

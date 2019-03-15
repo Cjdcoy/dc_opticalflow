@@ -40,8 +40,10 @@ class FpsMetter(object):
 
 class OpticalRealtime(object):
     def __init__(self, args_m):
+        realtime = __import__("vision_module", globals(), locals(), ['ComputeImage'], -1)
+        reload(realtime)
         self.args = args_m
-        self.computeImage = ComputeImage()  # COMPUTE IMAGE IS THE MODULE YOU HAVE TO LOAD IN ORDER TO SELECT YOUR ALOORITHM
+        self.computeImage = realtime.ComputeImage()  # COMPUTE IMAGE IS THE MODULE YOU HAVE TO LOAD IN ORDER TO SELECT YOUR ALOORITHM
         self.cap = cv2.VideoCapture(0)
         self.fpsMetter = FpsMetter()
         self.width = self.args.width

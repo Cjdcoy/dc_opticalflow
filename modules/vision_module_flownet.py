@@ -241,3 +241,6 @@ class ComputeImage(object):
         flow = np.resize(data, (int(h), int(w), 2))
         f.close()
         return flow
+
+    def __str__(self):
+        return "flownet"
