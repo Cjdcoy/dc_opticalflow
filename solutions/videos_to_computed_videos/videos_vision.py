@@ -28,7 +28,8 @@ args = parser.parse_args()
 
 
 class FpsMetter(object):
-    def __init__(self):
+    def __init__(self, args_m):
+        self.args = args_m
         self.chrono = time.time()
         self.fps = 0
         self.first_loop = True
@@ -41,7 +42,7 @@ class FpsMetter(object):
             self.first_loop = False
             self.fps = nb_loop / (time.time() - self.chrono)
             self.chrono = time.time()
-            if args.preview > 1 or args.preview == -1:
+            if self.args.preview > 1 or self.args.preview == -1:
                 print("fps: {:1.2f}".format(self.fps))
             return 0
         nb_loop += 1
@@ -49,23 +50,26 @@ class FpsMetter(object):
 
 
 class VideoList(object):
-    def __init__(self):
+    def __init__(self, args_m):
+        realtime = __import__("vision_module", globals(), locals(), ['ComputeImage'], -1)
+        reload(realtime)
+        self.args = args_m
         self.computeImage = ComputeImage() # COMPUTE IMAGE IS THE MODULE YOU HAVE TO LOAD IN ORDER TO SELECT YOUR ALOORITHM
-        self.fpsMetter = FpsMetter()
-        self.video_list = open(args.list, 'r').readlines()
+        self.fpsMetter = FpsMetter(self.args)
+        self.video_list = open(self.args.list, 'r').readlines()
         self.cursor = 0
         self.video = cv2.VideoCapture(self.video_list[self.cursor].replace("\n", ""))
-        self.width = args.width
-        self.height = args.height
+        self.width = self.args.width
+        self.height = self.args.height
         self.fourcc = cv2.VideoWriter_fourcc(*'XVID')
-        self.videoFps = args.fps
+        self.videoFps = self.args.fps
         self.estimation = False
-        if args.estimation > 0:
+        if self.args.estimation > 0:
             self.estimation = True
-        if len(args.save) > 0:
-            if not os.path.exists(args.save):
-                os.makedirs(args.save)
-            self.out = cv2.VideoWriter(args.save + "/" + str(self.cursor) + ".avi", self.fourcc, args.fps, (args.width, args.height))
+        if len(self.args.save) > 0:
+            if not os.path.exists(self.args.save):
+                os.makedirs(self.args.save)
+            self.out = cv2.VideoWriter(self.args.save + "/" + str(self.cursor) + ".avi", self.fourcc, self.args.fps, (self.args.width, self.args.height))
 
     def __del__(self):
         self.video.release()
@@ -76,7 +80,7 @@ class VideoList(object):
             self.video = cv2.VideoCapture(self.video_list[self.cursor].replace("\n", ""))
             if save:
                 self.out.release()
-                self.out = cv2.VideoWriter(args.save + "/" + str(self.cursor) + ".avi", self.fourcc, self.videoFps, (self.width,  self.height))
+                self.out = cv2.VideoWriter(self.args.save + "/" + str(self.cursor) + ".avi", self.fourcc, self.videoFps, (self.width,  self.height))
 
     def get_frame(self, save):
         success, image = self.video.read()
@@ -110,7 +114,7 @@ class VideoList(object):
         for i in range(0, len(self.video_list)):
             cap = cv2.VideoCapture(self.video_list[i].replace("\n", ""))
             frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            if args.estimation == 2:
+            if self.args.estimation == 2:
                 print("video " + str(i) + ": " + str(
                     frames) + " frames (" + "{:1.2f}".format(
                     frames / fps) + " seconds)")
@@ -127,27 +131,27 @@ class VideoList(object):
         nb_loop = self.fpsMetter.get_fps(nb_loop)
         if self.fpsMetter.init_finished and self.estimation: #does not estimate if the solution takes more than 1 second per image
             self.estimate_compute_time(self.fpsMetter.fps)
-        if args.preview > 0 and args.preview != 3:
+        if self.args.preview > 0 and args.preview != 3:
             font = cv2.FONT_HERSHEY_SIMPLEX
             cv2.putText(flow, "fps: " + "{:1.2f}".format(self.fpsMetter.fps), (10, 20),
                         font, 0.5, (120), 2)
-        if args.preview > -1:
+        if self.args.preview > -1:
             cv2.imshow('image received', flow)
             if cv2.waitKey(1) & 0xFF == 27:
                 return -1
         return nb_loop
 
-    def run_rendering(self):
+    def run(self):
         save = False
-        if len(args.save) > 0:
+        if len(self.args.save) > 0:
             save = True
         ret_val, prev_img = self.get_frame(save)
         nb_loop = 0
         while True:
             ret_val, actual_img = self.get_frame(save)
             if ret_val:
-                flow_img = self.computeImage.run(prev_img, actual_img, args)
-                if len(args.save) > 0:
+                flow_img = self.computeImage.run(prev_img, actual_img, self.args)
+                if len(self.args.save) > 0:
                     self.save_flow(flow_img)                #save video
                 nb_loop = self.preview(nb_loop, flow_img)   #preview / estimated
                 if nb_loop == -1:
@@ -160,7 +164,7 @@ class VideoList(object):
 
 
 def main():
-    VideoList().run_rendering()
+    VideoList().run()
 
 
 if __name__ == '__main__':

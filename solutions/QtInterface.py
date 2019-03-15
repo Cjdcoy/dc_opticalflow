@@ -3,7 +3,8 @@
 import sys
 import glob, os
 
-from realtime.realtime_vision  import OpticalRealtime
+from realtime.realtime_vision import OpticalRealtime
+from videos_to_computed_videos.videos_vision import VideoList
 from PySide2.QtWidgets import QApplication, QLabel, QWidget, QLineEdit, QCheckBox, QPushButton
 from PySide2.QtWidgets import QComboBox
 from cloud_computed_vision.optical_client import Streaming
@@ -189,8 +190,10 @@ class QtOpticalflowInterfaceCloud(QWidget):
 
         if self.compute_location.currentText() == "cloud":
             self.streaming = Streaming(FieldValue(self))
-        else:
+        elif self.mode.currentIndex() == 0:
             self.streaming = OpticalRealtime(FieldValue(self))
+        elif self.mode.currentIndex() == 1:
+            self.streaming = VideoList(FieldValue(self))
 
         self.streaming.run()
 
