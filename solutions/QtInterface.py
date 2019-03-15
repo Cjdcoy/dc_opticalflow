@@ -3,6 +3,7 @@
 import sys
 import glob, os
 
+from importlib import reload
 from PySide2.QtWidgets import QApplication, QLabel, QWidget, QLineEdit, QCheckBox, QPushButton
 from PySide2.QtWidgets import QComboBox
 from cloud_computed_vision.optical_client import Streaming
@@ -182,6 +183,7 @@ class QtOpticalflowInterfaceCloud(QWidget):
 
     def reset_window(self):
         copyfile("../modules/" + self.module_vision.currentText(), "./realtime/vision_module.py")
+        reload(OpticalRealtime)
         if self.compute_location.currentText() == "cloud":
             self.streaming = Streaming(FieldValue(self))
         else:
