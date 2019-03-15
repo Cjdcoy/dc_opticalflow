@@ -110,7 +110,8 @@ class ImageList(object):
 
 
 class FpsMetter(object):
-    def __init__(self):
+    def __init__(self, args):
+        self.args = args
         self.chrono = time.time()
         self.fps = 0
         self.average_fps = 0
@@ -126,7 +127,7 @@ class FpsMetter(object):
                 self.average_fps = self.fps
             self.average_fps = (self.average_fps + self.fps) / 2
             self.chrono = time.time()
-            if args.preview > 1 or args.preview == -1:
+            if self.args.preview > 1 or self.args.preview == -1:
                 print(self.fps)
             return 0
         nb_loop += 1
@@ -184,7 +185,7 @@ class Streaming(Thread):
     def __init__(self, args_conf):
         self.args = args_conf
         self.catchFall = CatchFall()
-        self.fpsMetter = FpsMetter()
+        self.fpsMetter = FpsMetter(args_conf)
         self.estimation = False
         # for algorithms that need to load a neural network we pass the first loop otherwise the
         # computing estimation could be rigged
@@ -296,9 +297,6 @@ class Streaming(Thread):
     def run(self):
         s = socket.socket()
         s.connect((self.args.ip, int(self.args.port)))
-        if len(args.ip2) > 0:
-            s2 = socket.socket()
-            s2.connect((self.args.ip2, int(self.args.port2)))
         nb_loop = 0
 
         print("Connected")
@@ -307,8 +305,6 @@ class Streaming(Thread):
             flow = self.receive_image(s)
             if len(self.args.save) > 0:
                 self.cap.save_flow(flow)
-            if len(args.ip2) > 0:
-                self.send_receive_and_analyse_fall_prob(s2, flow)
             nb_loop = self.preview(nb_loop, flow)
             if nb_loop == -1:
                 break
@@ -320,7 +316,6 @@ class Streaming(Thread):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-i", "--ip", type=str, default="localhost")
-    parser.add_argument("-i2", "--ip2", type=str, default="")
     parser.add_argument("-p", "--port", type=int, default=10000)
     parser.add_argument("-p2", "--port2", type=int, default=10001)
     parser.add_argument("--width", help="width of preview / save", type=int, default=320)

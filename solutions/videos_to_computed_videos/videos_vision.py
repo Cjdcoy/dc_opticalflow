@@ -51,9 +51,10 @@ class FpsMetter(object):
 
 class VideoList(object):
     def __init__(self, args_m):
-        realtime = __import__("vision_module", globals(), locals(), ['ComputeImage'], -1)
+        realtime = __import__("vision_module", globals(), locals(), ['ComputeImage'], 0)
         reload(realtime)
         self.args = args_m
+
         self.computeImage = ComputeImage() # COMPUTE IMAGE IS THE MODULE YOU HAVE TO LOAD IN ORDER TO SELECT YOUR ALOORITHM
         self.fpsMetter = FpsMetter(self.args)
         self.video_list = open(self.args.list, 'r').readlines()
@@ -70,9 +71,6 @@ class VideoList(object):
             if not os.path.exists(self.args.save):
                 os.makedirs(self.args.save)
             self.out = cv2.VideoWriter(self.args.save + "/" + str(self.cursor) + ".avi", self.fourcc, self.args.fps, (self.args.width, self.args.height))
-
-    def __del__(self):
-        self.video.release()
 
     def load_new_video(self, save):
         self.cursor += 1
@@ -131,7 +129,7 @@ class VideoList(object):
         nb_loop = self.fpsMetter.get_fps(nb_loop)
         if self.fpsMetter.init_finished and self.estimation: #does not estimate if the solution takes more than 1 second per image
             self.estimate_compute_time(self.fpsMetter.fps)
-        if self.args.preview > 0 and args.preview != 3:
+        if self.args.preview > 0 and self.args.preview != 3:
             font = cv2.FONT_HERSHEY_SIMPLEX
             cv2.putText(flow, "fps: " + "{:1.2f}".format(self.fpsMetter.fps), (10, 20),
                         font, 0.5, (120), 2)

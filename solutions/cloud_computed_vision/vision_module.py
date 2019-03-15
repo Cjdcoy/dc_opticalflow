@@ -34,6 +34,3 @@ class ComputeImage(object):
         DeltaDilatedBlur = cv2.GaussianBlur(DeltaDilated, (self.blurX, self.blurY), 0)
         DeltaDilatedBlurGrey = cv2.cvtColor(DeltaDilatedBlur, cv2.COLOR_BGR2GRAY)
         return DeltaDilatedBlurGrey
-
-    def __str__(self):
-        return "absdiff"
