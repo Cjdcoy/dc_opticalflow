@@ -164,7 +164,7 @@ class VideoList(object):
 
 
 def main():
-    VideoList().run()
+    VideoList().run(args)
 
 
 if __name__ == '__main__':
