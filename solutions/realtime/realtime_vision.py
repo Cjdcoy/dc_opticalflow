@@ -100,7 +100,7 @@ class OpticalRealtime(object):
 
 
 def main():
-    OpticalRealtime().run(args)
+    OpticalRealtime(args).run()
 
 
 if __name__ == '__main__':
