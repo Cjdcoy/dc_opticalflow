@@ -92,7 +92,7 @@ class VideoList(Thread):
         self.fpsMetter = FpsMetter()
         self.video_list = video_list
         self.cursor = 0
-        self.list = os.listdir('/home/blind/ai_visualsolutions/dataset/Coffee_room_01/Videos/')
+        #self.list = os.listdir('/home/blind/ai_visualsolutions/dataset/Coffee_room_01/Videos/')
         self.video = cv2.VideoCapture(self.video_list[self.cursor].replace("\n", ""))
         #self.video = cv2.VideoCapture('/home/blind/ai_visualsolutions/dataset/Coffee_room_01/Videos/' + self.list[self.cursor].replace("\n", ""))
         self.width = args.width
@@ -155,7 +155,7 @@ class VideoList(Thread):
         total_nb_frame = 0
         print("Calculating compute time...\nEstimated FPS: " + "{:1.2f}".format(
             fps) + "\n")
-        for i in range(0, len(self.list)):
+        for i in range(0, len(self.video_list)):
             cap = cv2.VideoCapture(self.video_list[i].replace("\n", ""))
             #cap = cv2.VideoCapture('/home/blind/ai_visualsolutions/dataset/Coffee_room_01/Videos/'+self.list[i].replace("\n", ""))
             frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
