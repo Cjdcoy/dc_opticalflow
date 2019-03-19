@@ -33,6 +33,7 @@ class ComputeImage(object):
         DeltaDilated = cv2.dilate(Delta, None, iterations=self.dilatation)
         DeltaDilatedBlur = cv2.GaussianBlur(DeltaDilated, (self.blurX, self.blurY), 0)
         DeltaDilatedBlurGrey = cv2.cvtColor(DeltaDilatedBlur, cv2.COLOR_BGR2GRAY)
+        DeltaDilatedBlurGrey = cv2.cvtColor(DeltaDilatedBlurGrey, cv2.COLOR_GRAY2BGR)
         return DeltaDilatedBlurGrey
 
     def __str__(self):
