@@ -132,7 +132,7 @@ class VideoList(object):
         if self.args.preview > 0 and self.args.preview != 3:
             font = cv2.FONT_HERSHEY_SIMPLEX
             cv2.putText(flow, "fps: " + "{:1.2f}".format(self.fpsMetter.fps), (10, 20),
-                        font, 0.5, (120), 2)
+                        font, 0.5, (0, 255, 0), 2)
         if self.args.preview > -1:
             cv2.imshow('image received', flow)
             if cv2.waitKey(1) & 0xFF == 27:
