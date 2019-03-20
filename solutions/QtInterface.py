@@ -22,7 +22,7 @@ class FieldValue(object):
         if not class_widget.save.isChecked():
             self.save = ""
         else:
-            self.save = class_widget.name_save.text() + ".avi"
+            self.save = class_widget.name_save.text()
 
         if class_widget.mode.currentText() == "video" or class_widget.mode.currentText() == "realtime":
             self.list = class_widget.video_file.text()
@@ -86,7 +86,7 @@ class QtOpticalflowInterfaceCloud(QWidget):
         self.save_text = QLabel("save:", self)
         self.save = QCheckBox(self)
 
-        self.save_extension = QLabel(".avi", self)
+        self.save_extension = QLabel("", self)
 
         self.name_save = QLineEdit(self)
 

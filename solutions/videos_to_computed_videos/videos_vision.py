@@ -5,6 +5,7 @@ import argparse
 from vision_module import ComputeImage
 import time
 from datetime import datetime, timedelta
+from tqdm import tqdm, trange
 
 #python2 optical_video.py -c ../../flownet2/models/FlowNet2-SD/FlowNet2-SD_weights.caffemodel.h5 -d ../../flownet2/models/FlowNet2-SD/FlowNet2-SD_deploy.prototxt.template -pre 0 -s test
 parser = argparse.ArgumentParser()
@@ -54,7 +55,6 @@ class VideoList(object):
         realtime = __import__("vision_module", globals(), locals(), ['ComputeImage'], 0)
         reload(realtime)
         self.args = args_m
-
         self.computeImage = ComputeImage() # COMPUTE IMAGE IS THE MODULE YOU HAVE TO LOAD IN ORDER TO SELECT YOUR ALOORITHM
         self.fpsMetter = FpsMetter(self.args)
         self.video_list = open(self.args.list, 'r').readlines()
@@ -65,12 +65,15 @@ class VideoList(object):
         self.fourcc = cv2.VideoWriter_fourcc(*'XVID')
         self.videoFps = self.args.fps
         self.estimation = False
+        #pbar
+        self.pbar_isset = False
+
         if self.args.estimation > 0:
             self.estimation = True
         if len(self.args.save) > 0:
             if not os.path.exists(self.args.save):
                 os.makedirs(self.args.save)
-            self.out = cv2.VideoWriter(self.args.save + "/" + str(self.cursor) + ".avi", self.fourcc, self.args.fps, (self.args.width, self.args.height))
+            self.out = cv2.VideoWriter(self.args.save + "/" + str(self.cursor) + ".avi", self.fourcc, int(self.args.fps), (int(self.args.width), int(self.args.height)))
 
     def load_new_video(self, save):
         self.cursor += 1
@@ -78,9 +81,11 @@ class VideoList(object):
             self.video = cv2.VideoCapture(self.video_list[self.cursor].replace("\n", ""))
             if save:
                 self.out.release()
-                self.out = cv2.VideoWriter(self.args.save + "/" + str(self.cursor) + ".avi", self.fourcc, self.videoFps, (self.width,  self.height))
+                self.out = cv2.VideoWriter(self.args.save + "/" + str(self.cursor) + ".avi", self.fourcc, int(self.args.fps), (int(self.args.width), int(self.args.height)))
 
     def get_frame(self, save):
+        if self.args.estimation > 0 and self.pbar_isset:
+            self.pbar.update()
         success, image = self.video.read()
         if success:
             image = cv2.resize(image, (self.width, self.height))
@@ -119,6 +124,8 @@ class VideoList(object):
             total_nb_frame += frames
         print("\nThere are " + str(total_nb_frame) + " frames to compute")
         print("Estimated compute time (day, hour, min, sec):")
+        self.pbar = tqdm(desc='compute estimation', total=total_nb_frame, unit='f')
+        self.pbar_isset = True
         sec = timedelta(seconds=total_nb_frame / fps)
         d = datetime(1, 1, 1) + sec
         print("{:02d}".format(d.day - 1) + ":" + "{:02d}".format(
@@ -132,7 +139,7 @@ class VideoList(object):
         if self.args.preview > 0 and self.args.preview != 3:
             font = cv2.FONT_HERSHEY_SIMPLEX
             cv2.putText(flow, "fps: " + "{:1.2f}".format(self.fpsMetter.fps), (10, 20),
-                        font, 0.5, (0, 255, 0), 2)
+                        font, 0.5, (255, 0, 255), 2)
         if self.args.preview > -1:
             cv2.imshow('image received', flow)
             if cv2.waitKey(1) & 0xFF == 27:

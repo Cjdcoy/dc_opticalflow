@@ -1,6 +1,5 @@
 import cv2
 import os
-import numpy as np
 
 #Computeimage is a generic class that allows us easily change the algorithm within the testing environment
 #you can load the properties you want placing a file .csv
@@ -28,14 +27,10 @@ class ComputeImage(object):
                 it += 2
 
     def run(self, prev_frame, actual_frame, args=None):
-        hsv = np.zeros_like(prev_frame)
-        hsv[..., 1] = 255
-        prev_frame = cv2.cvtColor(prev_frame, cv2.COLOR_BGR2GRAY)
-        actual_frame = cv2.cvtColor(actual_frame, cv2.COLOR_BGR2GRAY)
-        flow = cv2.calcOpticalFlowFarneback(prev_frame, actual_frame, None, 0.5, 3, 3, 6, 5, 1.2, 0)
-
-        mag, ang = cv2.cartToPolar(flow[..., 0], flow[..., 1])
-        hsv[..., 0] = ang * 180 / np.pi / 2
-        hsv[..., 2] = cv2.normalize(mag, None, 0, 255, cv2.NORM_MINMAX)
-        bgr = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-        return bgr
+        if self.first_run:
+            self.first_run = False
+        Delta = cv2.absdiff(prev_frame, actual_frame)
+        DeltaDilated = cv2.dilate(Delta, None, iterations=self.dilatation)
+        DeltaDilatedBlur = cv2.GaussianBlur(DeltaDilated, (self.blurX, self.blurY), 0)
+        DeltaDilatedBlurGrey = cv2.cvtColor(DeltaDilatedBlur, cv2.COLOR_BGR2GRAY)
+        return DeltaDilatedBlurGrey

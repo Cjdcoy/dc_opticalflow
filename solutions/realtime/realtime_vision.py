@@ -68,11 +68,11 @@ class OpticalRealtime(object):
 
     def preview(self, nb_loop, flow):
         nb_loop = self.fpsMetter.get_fps(nb_loop)
-        if args.preview > 0 and args.preview != 3:
+        if self.args.preview > 0 and self.args.preview != 3:
             font = cv2.FONT_HERSHEY_SIMPLEX
             cv2.putText(flow, "fps: " + "{:1.2f}".format(self.fpsMetter.fps), (10, 20),
-                        font, 0.5, (10, 10, 10), 2, cv2.LINE_AA)
-        if args.preview > -1:
+                        font, 0.5, (0, 255, 0), 2, cv2.LINE_AA)
+        if self.args.preview > -1:
             cv2.imshow('opticalflow received', flow)
             if cv2.waitKey(1) & 0xFF == 27:
                 return -1

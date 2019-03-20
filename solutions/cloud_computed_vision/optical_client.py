@@ -23,7 +23,7 @@ class VideoCamera(object):
         self.fourcc = cv2.VideoWriter_fourcc(*'XVID')
         self.fps = fps
         if len(save) > 0:
-            self.out = cv2.VideoWriter(save + ".avi", self.fourcc, fps, (width, height))
+            self.out = cv2.VideoWriter(save + ".avi", self.fourcc, int(fps), (int(width), int(height)))
 
     def __del__(self):
         self.video.release()
@@ -52,7 +52,7 @@ class VideoList(object):
         if len(save) > 0:
             if not os.path.exists(save):
                 os.makedirs(save)
-            self.out = cv2.VideoWriter(self.save + "/" + str(self.cursor) + ".avi", self.fourcc, fps, (width, height))
+            self.out = cv2.VideoWriter(self.save + "/" + str(self.cursor) + ".avi", self.fourcc, int(self.fps), (int(self.width), int(self.height)))
 
     def __del__(self):
         self.video.release()
@@ -63,7 +63,7 @@ class VideoList(object):
             self.video = cv2.VideoCapture(self.video_list[self.cursor].replace("\n", ""))
             if save:
                 self.out.release()
-                self.out = cv2.VideoWriter(self.save + "/" + str(self.cursor) + ".avi", self.fourcc, self.fps, (self.width,  self.height))
+                self.out = cv2.VideoWriter(self.save + "/" + str(self.cursor) + ".avi", self.fourcc, int(self.fps), (int(self.width), int(self.height)))
 
     def get_frame(self, save):
         success, image = self.video.read()
@@ -283,7 +283,7 @@ class Streaming(Thread):
         if self.args.preview > 0 and self.args.preview != 3:
             font = cv2.FONT_HERSHEY_SIMPLEX
             cv2.putText(flow, "fps: " + "{:1.2f}".format(self.fpsMetter.fps), (10, 20),
-                        font, 0.5, (10, 10, 10), 2,
+                        font, 0.5, (255, 0, 255), 2,
                         cv2.LINE_AA)
         self.catchFall.add_image(flow, fps=self.fpsMetter.average_fps)
         if self.args.preview > -1:
